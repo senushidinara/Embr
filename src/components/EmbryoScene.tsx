@@ -56,11 +56,20 @@ export function EmbryoScene({
     const mount = mountRef.current;
     if (!mount) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.localClippingEnabled = true;
     renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -68,11 +77,18 @@ export function EmbryoScene({
     camera.position.set(0, 0, 8);
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+    const hemi = new THREE.HemisphereLight(0xfff3fb, 0x24111b, 0.45);
+    scene.add(hemi);
     const key = new THREE.DirectionalLight(0xffe4f0, 1.4);
     key.position.set(4, 5, 6);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.radius = 2;
     scene.add(key);
     const rim = new THREE.DirectionalLight(0x88ccff, 0.9);
     rim.position.set(-5, -3, -4);
+    rim.castShadow = true;
+    rim.shadow.mapSize.set(1024, 1024);
     scene.add(rim);
     const fill = new THREE.PointLight(0xff88bb, 0.7, 20);
     fill.position.set(-3, 2, 3);
@@ -140,6 +156,20 @@ export function EmbryoScene({
     let raf = 0;
     const clock = new THREE.Clock();
     const tmpV = new THREE.Vector3();
+    const tuneMeshQuality = (root: THREE.Object3D) => {
+      root.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        const m = mesh.material as THREE.Material | THREE.Material[] | undefined;
+        if (!m) return;
+        const arr = Array.isArray(m) ? m : [m];
+        for (const mm of arr) {
+          mm.dithering = true;
+        }
+      });
+    };
 
     const applyOpacity = (root: THREE.Object3D, mult: number) => {
       root.traverse((o) => {
@@ -276,6 +306,7 @@ export function EmbryoScene({
       st.prevOpacity = st.buildOpacity;
     }
     const b = buildDayScene(day);
+    tuneMeshQuality(b.group);
     st.build = b;
     st.labels = b.labels;
     st.buildOpacity = 0;
