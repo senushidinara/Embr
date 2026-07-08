@@ -224,8 +224,12 @@ export function EmbryoScene({
         if (!m) return;
         const arr = Array.isArray(m) ? m : [m];
         for (const mm of arr) {
-          const anyM = mm as THREE.Material & { opacity?: number; userData: { baseOp?: number } };
-          if (anyM.userData.baseOp == null) anyM.userData.baseOp = anyM.opacity ?? 1;
+          if (!mm) continue;
+          const anyM = mm as any;
+          if (!anyM.userData) anyM.userData = {};
+          if (anyM.userData.baseOp == null) {
+            anyM.userData.baseOp = anyM.opacity ?? 1;
+          }
           anyM.transparent = true;
           anyM.opacity = (anyM.userData.baseOp ?? 1) * mult;
         }
@@ -272,15 +276,20 @@ export function EmbryoScene({
 
       if (st.build) {
         const outerFactor = st.xray ? 0.15 : 1;
-        for (const m of st.build.outerMeshes) {
-          const anyM = m.material as THREE.MeshPhysicalMaterial & {
-            userData: { xrayBase?: number };
-          };
-          if (anyM.userData.xrayBase == null)
-            anyM.userData.xrayBase = anyM.userData.baseOp ?? anyM.opacity;
-          const desired = (anyM.userData.xrayBase ?? 1) * outerFactor * st.buildOpacity;
-          anyM.transparent = true;
-          anyM.opacity += (desired - anyM.opacity) * 0.15;
+        for (const mesh of st.build.outerMeshes) {
+          if (!mesh.material) continue;
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const mat of mats) {
+            if (!mat) continue;
+            const anyM = mat as any;
+            if (!anyM.userData) anyM.userData = {};
+            if (anyM.userData.xrayBase == null) {
+              anyM.userData.xrayBase = anyM.userData.baseOp ?? anyM.opacity ?? 1;
+            }
+            const desired = (anyM.userData.xrayBase ?? 1) * outerFactor * st.buildOpacity;
+            anyM.transparent = true;
+            anyM.opacity = (anyM.opacity ?? 1) + (desired - (anyM.opacity ?? 1)) * 0.15;
+          }
         }
       }
 
@@ -305,6 +314,7 @@ export function EmbryoScene({
           if (!m) return;
           const arr = Array.isArray(m) ? m : [m];
           for (const mm of arr) {
+            if (!mm) continue;
             mm.clippingPlanes = st.slicePlane === "off" ? [] : [st.clippingPlane];
             mm.clipShadows = true;
           }
@@ -343,6 +353,17 @@ export function EmbryoScene({
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointercancel", onUp);
       el.removeEventListener("wheel", onWheel);
+
+      // Cleanup scene objects
+      scene.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (mesh.material) {
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const mat of mats) mat?.dispose?.();
+        }
+      });
+
       renderer.dispose();
       mount.removeChild(renderer.domElement);
     };
