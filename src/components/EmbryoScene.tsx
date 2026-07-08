@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { buildStage, STAGES, type StageId, type StageLabel } from "@/lib/embryo-stages";
+import { buildDayScene, type DaySceneBuild, type DaySceneLabel } from "@/lib/embryo-day-scenes";
+import { STAGES, type StageId } from "@/lib/embryo-stages";
 
 type Plane = "sagittal" | "transverse" | "coronal";
-
 interface Screen { x: number; y: number; visible: boolean }
 
 export function EmbryoScene({
-  stage,
+  day,
   xray,
   explode,
   slicePlane,
@@ -15,11 +15,11 @@ export function EmbryoScene({
   onLabels,
   selectedLabel,
 }: {
-  stage: StageId;
+  day: number;
   xray: boolean;
-  explode: number; // 0..1
+  explode: number;
   slicePlane: Plane | "off";
-  sliceDepth: number; // -1..1
+  sliceDepth: number;
   onLabels: (labels: { key: string; text: string; screen: Screen; description: string }[]) => void;
   selectedLabel: string | null;
 }) {
@@ -29,12 +29,15 @@ export function EmbryoScene({
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     stageGroup: THREE.Group;
-    build: ReturnType<typeof buildStage> | null;
+    prevBuild: DaySceneBuild | null;
+    prevGroup: THREE.Group | null;
+    prevOpacity: number;
+    build: DaySceneBuild | null;
+    buildOpacity: number;
     clippingPlane: THREE.Plane;
     slicePlaneMesh: THREE.Mesh;
-    labels: StageLabel[];
+    labels: DaySceneLabel[];
     dispose: () => void;
-    // control state
     rotX: number; rotY: number;
     targetRotX: number; targetRotY: number;
     dragging: boolean;
@@ -46,9 +49,9 @@ export function EmbryoScene({
     sliceDepth: number;
     onLabels: typeof onLabels;
     selectedLabel: string | null;
+    dayStartT: number;
   } | null>(null);
 
-  // init once
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
@@ -79,8 +82,6 @@ export function EmbryoScene({
     scene.add(stageGroup);
 
     const clippingPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 100);
-
-    // Pink slicing plane visualizer
     const slicePlaneMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(7, 7),
       new THREE.MeshBasicMaterial({
@@ -91,37 +92,32 @@ export function EmbryoScene({
     scene.add(slicePlaneMesh);
 
     const st: NonNullable<typeof stateRef.current> = {
-      renderer, scene, camera, stageGroup, build: null, clippingPlane, slicePlaneMesh,
-      labels: [],
-      rotX: 0, rotY: 0, targetRotX: 0, targetRotY: 0,
+      renderer, scene, camera, stageGroup,
+      prevBuild: null, prevGroup: null, prevOpacity: 0,
+      build: null, buildOpacity: 1,
+      clippingPlane, slicePlaneMesh, labels: [],
+      rotX: 0.1, rotY: 0.4, targetRotX: 0.1, targetRotY: 0.4,
       dragging: false, lastX: 0, lastY: 0, zoom: 8,
       xray: false, explode: 0, slicePlane: "off", sliceDepth: 0,
-      onLabels, selectedLabel: null,
-      dispose: () => {},
+      onLabels, selectedLabel: null, dispose: () => {}, dayStartT: 0,
     };
     stateRef.current = st;
 
-    // Interaction
     const el = renderer.domElement;
     const onDown = (e: PointerEvent) => {
-      st.dragging = true;
-      st.lastX = e.clientX;
-      st.lastY = e.clientY;
+      st.dragging = true; st.lastX = e.clientX; st.lastY = e.clientY;
       el.setPointerCapture(e.pointerId);
     };
     const onMove = (e: PointerEvent) => {
       if (!st.dragging) return;
-      const dx = e.clientX - st.lastX;
-      const dy = e.clientY - st.lastY;
-      st.lastX = e.clientX;
-      st.lastY = e.clientY;
-      st.targetRotY += dx * 0.01;
-      st.targetRotX += dy * 0.01;
+      const dx = e.clientX - st.lastX; const dy = e.clientY - st.lastY;
+      st.lastX = e.clientX; st.lastY = e.clientY;
+      st.targetRotY += dx * 0.01; st.targetRotX += dy * 0.01;
       st.targetRotX = Math.max(-1.2, Math.min(1.2, st.targetRotX));
     };
     const onUp = (e: PointerEvent) => {
       st.dragging = false;
-      try { el.releasePointerCapture(e.pointerId); } catch {}
+      try { el.releasePointerCapture(e.pointerId); } catch { /* noop */ }
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -133,7 +129,6 @@ export function EmbryoScene({
     el.addEventListener("pointercancel", onUp);
     el.addEventListener("wheel", onWheel, { passive: false });
 
-    // Resize
     const ro = new ResizeObserver(() => {
       const w = mount.clientWidth, h = mount.clientHeight;
       renderer.setSize(w, h);
@@ -142,23 +137,56 @@ export function EmbryoScene({
     });
     ro.observe(mount);
 
-    // Animate
     let raf = 0;
     const clock = new THREE.Clock();
     const tmpV = new THREE.Vector3();
 
+    const applyOpacity = (root: THREE.Object3D, mult: number) => {
+      root.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        const m = mesh.material as THREE.Material | THREE.Material[] | undefined;
+        if (!m) return;
+        const arr = Array.isArray(m) ? m : [m];
+        for (const mm of arr) {
+          const anyM = mm as THREE.Material & { opacity?: number; userData: { baseOp?: number } };
+          if (anyM.userData.baseOp == null) anyM.userData.baseOp = anyM.opacity ?? 1;
+          anyM.transparent = true;
+          anyM.opacity = (anyM.userData.baseOp ?? 1) * mult;
+        }
+      });
+    };
+
     const tick = () => {
       const t = clock.getElapsedTime();
-      // smooth camera
       st.rotX += (st.targetRotX - st.rotX) * 0.12;
       st.rotY += (st.targetRotY - st.rotY) * 0.12;
       stageGroup.rotation.x = st.rotX;
       stageGroup.rotation.y = st.rotY;
       camera.position.z += (st.zoom - camera.position.z) * 0.1;
 
-      if (st.build?.update) st.build.update(t);
+      // Crossfade
+      if (st.prevGroup) {
+        st.prevOpacity -= 0.05;
+        applyOpacity(st.prevGroup, Math.max(0, st.prevOpacity));
+        if (st.prevOpacity <= 0) {
+          stageGroup.remove(st.prevGroup);
+          st.prevGroup.traverse((o) => {
+            const mesh = o as THREE.Mesh;
+            if (mesh.geometry) mesh.geometry.dispose?.();
+          });
+          st.prevGroup = null;
+          st.prevBuild = null;
+        }
+      }
+      if (st.build && st.buildOpacity < 1) {
+        st.buildOpacity = Math.min(1, st.buildOpacity + 0.06);
+        applyOpacity(st.build.group, st.buildOpacity);
+      }
 
-      // explode
+      const localT = t - st.dayStartT;
+      if (st.build?.update) st.build.update(localT);
+      if (st.prevBuild?.update) st.prevBuild.update(t);
+
       if (st.build) {
         for (const ex of st.build.explodable) {
           const off = ex.dir.clone().multiplyScalar(st.explode * 1.5);
@@ -166,14 +194,14 @@ export function EmbryoScene({
         }
       }
 
-      // xray - fade outer meshes
       if (st.build) {
+        const outerFactor = st.xray ? 0.15 : 1;
         for (const m of st.build.outerMeshes) {
-          const mat = m.material as THREE.MeshPhysicalMaterial;
-          const targetOpacity = st.xray ? 0.15 : (mat.userData.baseOpacity ?? 1);
-          if (mat.userData.baseOpacity == null) mat.userData.baseOpacity = mat.opacity;
-          mat.transparent = true;
-          mat.opacity += (targetOpacity - mat.opacity) * 0.15;
+          const anyM = m.material as THREE.MeshPhysicalMaterial & { userData: { xrayBase?: number } };
+          if (anyM.userData.xrayBase == null) anyM.userData.xrayBase = anyM.userData.baseOp ?? anyM.opacity;
+          const desired = (anyM.userData.xrayBase ?? 1) * outerFactor * st.buildOpacity;
+          anyM.transparent = true;
+          anyM.opacity += (desired - anyM.opacity) * 0.15;
         }
       }
 
@@ -188,14 +216,10 @@ export function EmbryoScene({
         else if (st.slicePlane === "coronal") n.set(0, 0, 1);
         else n.set(0, 1, 0);
         st.clippingPlane.normal.copy(n);
-        // depth: -1..1 maps to constant
         st.clippingPlane.constant = -st.sliceDepth * 2.5;
-        // position plane mesh
         slicePlaneMesh.position.copy(n.clone().multiplyScalar(st.sliceDepth * 2.5));
         slicePlaneMesh.lookAt(slicePlaneMesh.position.clone().add(n));
       }
-
-      // Apply clipping to all stage materials
       if (st.build) {
         st.build.group.traverse((o) => {
           const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
@@ -210,7 +234,6 @@ export function EmbryoScene({
 
       renderer.render(scene, camera);
 
-      // project labels
       const w = mount.clientWidth, h = mount.clientHeight;
       const out: { key: string; text: string; screen: Screen; description: string }[] = [];
       for (const lb of st.labels) {
@@ -242,29 +265,25 @@ export function EmbryoScene({
     return () => st.dispose();
   }, []); // eslint-disable-line
 
-  // rebuild on stage change
+  // rebuild on day change with crossfade
   useEffect(() => {
     const st = stateRef.current;
     if (!st) return;
-    // remove old
-    while (st.stageGroup.children.length) {
-      const c = st.stageGroup.children[0];
-      st.stageGroup.remove(c);
-      c.traverse((o) => {
-        const mesh = o as THREE.Mesh;
-        if (mesh.geometry) mesh.geometry.dispose?.();
-      });
+    // Move current to prev
+    if (st.build) {
+      st.prevBuild = st.build;
+      st.prevGroup = st.build.group;
+      st.prevOpacity = st.buildOpacity;
     }
-    const b = buildStage(stage);
+    const b = buildDayScene(day);
     st.build = b;
     st.labels = b.labels;
+    st.buildOpacity = 0;
     st.stageGroup.add(b.group);
-    // reset rotation slightly
-    st.targetRotY = 0.4;
-    st.targetRotX = 0.1;
-  }, [stage]);
+    // fresh time origin so per-day animations play from start
+    st.dayStartT = performance.now() / 1000;
+  }, [day]);
 
-  // update reactive props
   useEffect(() => {
     const st = stateRef.current;
     if (!st) return;
@@ -280,4 +299,4 @@ export function EmbryoScene({
 }
 
 export { STAGES };
-export type { StageId, StageLabel };
+export type { StageId };

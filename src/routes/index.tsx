@@ -34,7 +34,7 @@ function Index() {
   const lastTickRef = useRef<number>(0);
   useEffect(() => {
     if (!playing) return;
-    const perStep = 2600 / speed; // ms per day at 1x
+    const perStep = 1400 / speed; // ms per day at 1x
     let raf = 0;
     lastTickRef.current = performance.now();
     const tick = (t: number) => {
@@ -58,10 +58,22 @@ function Index() {
   // Reset label selection when day changes
   useEffect(() => { setSelected(null); }, [dayIdx]);
 
+  // Keyboard controls: ← → to step, space to play/pause
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "ArrowRight") { setDayIdx((i) => Math.min(DAYS.length - 1, i + 1)); }
+      else if (e.key === "ArrowLeft") { setDayIdx((i) => Math.max(0, i - 1)); }
+      else if (e.key === " ") { e.preventDefault(); setPlaying((p) => !p); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       <EmbryoScene
-        stage={day.stageId}
+        day={day.day}
         xray={xray}
         explode={explode}
         slicePlane={slicePlane}
@@ -344,6 +356,7 @@ function Index() {
                 type="range"
                 min={0} max={DAYS.length - 1} step={1}
                 value={dayIdx}
+                onInput={(e) => setDayIdx(parseInt((e.target as HTMLInputElement).value))}
                 onChange={(e) => setDayIdx(parseInt(e.target.value))}
                 className="w-full accent-primary mt-1"
               />
