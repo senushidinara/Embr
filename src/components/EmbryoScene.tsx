@@ -375,6 +375,22 @@ export function EmbryoScene({
   useEffect(() => {
     const st = stateRef.current;
     if (!st) return;
+
+    const tuneMeshQuality = (root: THREE.Object3D) => {
+      root.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        const m = mesh.material as THREE.Material | THREE.Material[] | undefined;
+        if (!m) return;
+        const arr = Array.isArray(m) ? m : [m];
+        for (const mm of arr) {
+          mm.dithering = true;
+        }
+      });
+    };
+
     // Move current to prev
     if (st.build) {
       st.prevBuild = st.build;
