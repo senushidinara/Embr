@@ -120,7 +120,7 @@ function day1(): DaySceneBuild {
   g.add(acrosome);
 
   // Calcium wave ring
-  const caWave = makeRing(0.2, 0.03, 0.66ccff, 0);
+  const caWave = makeRing(0.2, 0.03, 0x66ccff, 0);
   caWave.rotation.x = Math.PI / 2;
   g.add(caWave);
 
