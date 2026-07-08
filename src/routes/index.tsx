@@ -356,6 +356,7 @@ function Index() {
                 type="range"
                 min={0} max={DAYS.length - 1} step={1}
                 value={dayIdx}
+                onInput={(e) => setDayIdx(parseInt((e.target as HTMLInputElement).value))}
                 onChange={(e) => setDayIdx(parseInt(e.target.value))}
                 className="w-full accent-primary mt-1"
               />
