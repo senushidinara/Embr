@@ -73,7 +73,7 @@ function Index() {
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       <EmbryoScene
-        stage={day.stageId}
+        day={day.day}
         xray={xray}
         explode={explode}
         slicePlane={slicePlane}
