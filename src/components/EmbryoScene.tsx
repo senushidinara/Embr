@@ -63,11 +63,29 @@ export function EmbryoScene({
     const mount = mountRef.current;
     if (!mount) return;
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance",
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance",
+        precision: "highp",
+        stencil: false,
+        depth: true,
+        failIfMajorPerformanceCaveat: false,
+      });
+    } catch (e) {
+      console.warn("WebGL initialization failed, retrying with fallback settings", e);
+      renderer = new THREE.WebGLRenderer({
+        antialias: false,
+        alpha: true,
+        powerPreference: "low-power",
+        precision: "mediump",
+        stencil: false,
+        depth: true,
+      });
+    }
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.localClippingEnabled = true;
@@ -168,8 +186,9 @@ export function EmbryoScene({
       const dy = e.clientY - st.lastY;
       st.lastX = e.clientX;
       st.lastY = e.clientY;
-      st.targetRotY += dx * 0.01;
-      st.targetRotX += dy * 0.01;
+      const sensitivity = 0.012;
+      st.targetRotY += dx * sensitivity;
+      st.targetRotX += dy * sensitivity;
       st.targetRotX = Math.max(-1.2, Math.min(1.2, st.targetRotX));
     };
     const onUp = (e: PointerEvent) => {
@@ -182,7 +201,8 @@ export function EmbryoScene({
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      st.zoom = Math.max(4, Math.min(16, st.zoom + Math.sign(e.deltaY) * 0.6));
+      const zoomSpeed = window.innerWidth < 640 ? 0.4 : 0.6;
+      st.zoom = Math.max(4, Math.min(16, st.zoom + Math.sign(e.deltaY) * zoomSpeed));
     };
     el.addEventListener("pointerdown", onDown);
     el.addEventListener("pointermove", onMove);
@@ -238,11 +258,13 @@ export function EmbryoScene({
 
     const tick = () => {
       const t = clock.getElapsedTime();
-      st.rotX += (st.targetRotX - st.rotX) * 0.12;
-      st.rotY += (st.targetRotY - st.rotY) * 0.12;
+      const rotationSmoothing = 0.15;
+      const zoomSmoothing = 0.12;
+      st.rotX += (st.targetRotX - st.rotX) * rotationSmoothing;
+      st.rotY += (st.targetRotY - st.rotY) * rotationSmoothing;
       stageGroup.rotation.x = st.rotX;
       stageGroup.rotation.y = st.rotY;
-      camera.position.z += (st.zoom - camera.position.z) * 0.1;
+      camera.position.z += (st.zoom - camera.position.z) * zoomSmoothing;
 
       // Crossfade
       if (st.prevGroup) {
@@ -331,7 +353,7 @@ export function EmbryoScene({
         const proj = tmpV.clone().project(camera);
         const x = (proj.x * 0.5 + 0.5) * w;
         const y = (-proj.y * 0.5 + 0.5) * h;
-        const visible = proj.z > -1 && proj.z < 1;
+        const visible = proj.z > -1 && proj.z < 1 && x > 0 && x < w && y > 0 && y < h;
         out.push({
           key: lb.key,
           text: lb.text,
