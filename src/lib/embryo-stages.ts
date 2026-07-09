@@ -14,27 +14,83 @@ export interface StageMeta {
 }
 
 export const STAGES: StageMeta[] = [
-  { id: "day1", day: 1, title: "Zygote", subtitle: "Fertilization",
-    size: "0.10 mm", cells: "1 cell · 2 pronuclei", phase: "Pre-cleavage",
-    blurb: "A single fertilized cell wrapped in a translucent zona pellucida. Two pronuclei drift toward each other before syngamy." },
-  { id: "day3", day: 3, title: "Morula", subtitle: "Cleavage",
-    size: "0.15 mm", cells: "16 blastomeres", phase: "Compaction",
-    blurb: "A mulberry-like ball of totipotent blastomeres tightly packed inside the zona pellucida." },
-  { id: "day5", day: 5, title: "Blastocyst", subtitle: "Cavitation",
-    size: "0.20 mm", cells: "~120 cells", phase: "First lineage decision",
-    blurb: "A hollow blastocoele forms. Outer trophoblasts commit to placenta; inner cell mass stays pluripotent." },
-  { id: "day8", day: 8, title: "Bilaminar Disc", subtitle: "Implantation",
-    size: "0.25 mm", cells: "Epiblast + Hypoblast", phase: "Two-layer embryo",
-    blurb: "The embryo implants into endometrium. A flat two-layered disc sits between the amniotic and yolk sac cavities." },
-  { id: "day16", day: 16, title: "Gastrulation", subtitle: "Three germ layers",
-    size: "1.5 mm", cells: "Ecto · Meso · Endo", phase: "Primitive streak",
-    blurb: "Epiblast cells stream through the primitive streak, forming mesoderm and endoderm between the layers." },
-  { id: "day21", day: 21, title: "Neurulation", subtitle: "Neural tube",
-    size: "2.5 mm", cells: "Neural tube + somites", phase: "CNS forms",
-    blurb: "The neural plate folds into a tube. Paired somites bud off along its sides as the future spine." },
-  { id: "day28", day: 28, title: "Organogenesis", subtitle: "C-shaped embryo",
-    size: "4.0 mm", cells: "Millions · organs form", phase: "Beating heart",
-    blurb: "A curved C-shaped embryo with brain vesicles, pharyngeal arches, limb buds and an actively pulsing heart." },
+  {
+    id: "day1",
+    day: 1,
+    title: "Zygote",
+    subtitle: "Fertilization",
+    size: "0.10 mm",
+    cells: "1 cell · 2 pronuclei",
+    phase: "Pre-cleavage",
+    blurb:
+      "A single fertilized cell wrapped in a translucent zona pellucida. Two pronuclei drift toward each other before syngamy.",
+  },
+  {
+    id: "day3",
+    day: 3,
+    title: "Morula",
+    subtitle: "Cleavage",
+    size: "0.15 mm",
+    cells: "16 blastomeres",
+    phase: "Compaction",
+    blurb:
+      "A mulberry-like ball of totipotent blastomeres tightly packed inside the zona pellucida.",
+  },
+  {
+    id: "day5",
+    day: 5,
+    title: "Blastocyst",
+    subtitle: "Cavitation",
+    size: "0.20 mm",
+    cells: "~120 cells",
+    phase: "First lineage decision",
+    blurb:
+      "A hollow blastocoele forms. Outer trophoblasts commit to placenta; inner cell mass stays pluripotent.",
+  },
+  {
+    id: "day8",
+    day: 8,
+    title: "Bilaminar Disc",
+    subtitle: "Implantation",
+    size: "0.25 mm",
+    cells: "Epiblast + Hypoblast",
+    phase: "Two-layer embryo",
+    blurb:
+      "The embryo implants into endometrium. A flat two-layered disc sits between the amniotic and yolk sac cavities.",
+  },
+  {
+    id: "day16",
+    day: 16,
+    title: "Gastrulation",
+    subtitle: "Three germ layers",
+    size: "1.5 mm",
+    cells: "Ecto · Meso · Endo",
+    phase: "Primitive streak",
+    blurb:
+      "Epiblast cells stream through the primitive streak, forming mesoderm and endoderm between the layers.",
+  },
+  {
+    id: "day21",
+    day: 21,
+    title: "Neurulation",
+    subtitle: "Neural tube",
+    size: "2.5 mm",
+    cells: "Neural tube + somites",
+    phase: "CNS forms",
+    blurb:
+      "The neural plate folds into a tube. Paired somites bud off along its sides as the future spine.",
+  },
+  {
+    id: "day28",
+    day: 28,
+    title: "Organogenesis",
+    subtitle: "C-shaped embryo",
+    size: "4.0 mm",
+    cells: "Millions · organs form",
+    phase: "Beating heart",
+    blurb:
+      "A curved C-shaped embryo with brain vesicles, pharyngeal arches, limb buds and an actively pulsing heart.",
+  },
 ];
 
 export interface StageLabel {
@@ -56,7 +112,12 @@ export interface StageBuild {
 const mat = (opts: THREE.MeshPhysicalMaterialParameters) =>
   new THREE.MeshPhysicalMaterial({ roughness: 0.35, clearcoat: 0.4, ...opts });
 
-function makeLabel(key: string, text: string, pos: [number, number, number], desc: string): StageLabel {
+function makeLabel(
+  key: string,
+  text: string,
+  pos: [number, number, number],
+  desc: string,
+): StageLabel {
   return { key, text, position: new THREE.Vector3(...pos), description: desc };
 }
 
@@ -69,7 +130,15 @@ function buildDay1(): StageBuild {
 
   const zona = new THREE.Mesh(
     new THREE.SphereGeometry(2.4, 64, 64),
-    mat({ color: 0xf7c8dc, transmission: 0.85, transparent: true, opacity: 0.35, thickness: 0.6, roughness: 0.15, ior: 1.3 }),
+    mat({
+      color: 0xf7c8dc,
+      transmission: 0.85,
+      transparent: true,
+      opacity: 0.35,
+      thickness: 0.6,
+      roughness: 0.15,
+      ior: 1.3,
+    }),
   );
   group.add(zona);
   outerMeshes.push(zona);
@@ -81,8 +150,18 @@ function buildDay1(): StageBuild {
   group.add(membrane);
   outerMeshes.push(membrane);
 
-  const pnMat1 = mat({ color: 0x8ec5ff, emissive: 0x2244aa, emissiveIntensity: 0.4, roughness: 0.3 });
-  const pnMat2 = mat({ color: 0xffb3c8, emissive: 0xaa2255, emissiveIntensity: 0.4, roughness: 0.3 });
+  const pnMat1 = mat({
+    color: 0x8ec5ff,
+    emissive: 0x2244aa,
+    emissiveIntensity: 0.4,
+    roughness: 0.3,
+  });
+  const pnMat2 = mat({
+    color: 0xffb3c8,
+    emissive: 0xaa2255,
+    emissiveIntensity: 0.4,
+    roughness: 0.3,
+  });
   const pn1 = new THREE.Mesh(new THREE.SphereGeometry(0.55, 32, 32), pnMat1);
   const pn2 = new THREE.Mesh(new THREE.SphereGeometry(0.55, 32, 32), pnMat2);
   pn1.position.set(-0.55, 0.1, 0);
@@ -92,9 +171,24 @@ function buildDay1(): StageBuild {
   explodable.push({ mesh: pn2, dir: pn2.position.clone().normalize(), base: pn2.position.clone() });
 
   labels.push(
-    makeLabel("zona", "Zona Pellucida", [0, 2.55, 0], "Glycoprotein shell protecting the zygote and blocking polyspermy."),
-    makeLabel("pn1", "Male Pronucleus", [-0.55, 0.7, 0], "Paternal DNA decondensing before fusion with the maternal pronucleus."),
-    makeLabel("pn2", "Female Pronucleus", [0.85, -0.5, 0], "Maternal DNA awaiting syngamy — the fusion event that ends fertilization."),
+    makeLabel(
+      "zona",
+      "Zona Pellucida",
+      [0, 2.55, 0],
+      "Glycoprotein shell protecting the zygote and blocking polyspermy.",
+    ),
+    makeLabel(
+      "pn1",
+      "Male Pronucleus",
+      [-0.55, 0.7, 0],
+      "Paternal DNA decondensing before fusion with the maternal pronucleus.",
+    ),
+    makeLabel(
+      "pn2",
+      "Female Pronucleus",
+      [0.85, -0.5, 0],
+      "Maternal DNA awaiting syngamy — the fusion event that ends fertilization.",
+    ),
   );
 
   const drift = (t: number) => {
@@ -113,7 +207,14 @@ function buildDay3(): StageBuild {
 
   const zona = new THREE.Mesh(
     new THREE.SphereGeometry(2.5, 48, 48),
-    mat({ color: 0xf7c8dc, transmission: 0.85, transparent: true, opacity: 0.28, roughness: 0.15, ior: 1.3 }),
+    mat({
+      color: 0xf7c8dc,
+      transmission: 0.85,
+      transparent: true,
+      opacity: 0.28,
+      roughness: 0.15,
+      ior: 1.3,
+    }),
   );
   group.add(zona);
   outerMeshes.push(zona);
@@ -121,7 +222,13 @@ function buildDay3(): StageBuild {
   // 16 blastomeres packed spherically (fibonacci sphere then jitter)
   const N = 16;
   const cellGeo = new THREE.SphereGeometry(0.55, 24, 24);
-  const cellMat = mat({ color: 0xffd6e4, roughness: 0.3, clearcoat: 0.7, sheen: 1, sheenColor: 0xffaacc });
+  const cellMat = mat({
+    color: 0xffd6e4,
+    roughness: 0.3,
+    clearcoat: 0.7,
+    sheen: 1,
+    sheenColor: 0xffaacc,
+  });
   const cells: THREE.Mesh[] = [];
   const phi = Math.PI * (Math.sqrt(5) - 1);
   const R = 0.95;
@@ -139,8 +246,18 @@ function buildDay3(): StageBuild {
   }
 
   labels.push(
-    makeLabel("morula", "Blastomeres (16)", [0, 1.6, 0], "Totipotent daughter cells produced by cleavage divisions of the zygote."),
-    makeLabel("zona-m", "Zona Pellucida", [0, 2.7, 0], "Still enclosing the embryo — will hatch by Day 5."),
+    makeLabel(
+      "morula",
+      "Blastomeres (16)",
+      [0, 1.6, 0],
+      "Totipotent daughter cells produced by cleavage divisions of the zygote.",
+    ),
+    makeLabel(
+      "zona-m",
+      "Zona Pellucida",
+      [0, 2.7, 0],
+      "Still enclosing the embryo — will hatch by Day 5.",
+    ),
   );
 
   const update = (t: number) => {
@@ -162,7 +279,13 @@ function buildDay5(): StageBuild {
   // Trophoblast shell (hollow flat cells) - a thin sphere
   const tropho = new THREE.Mesh(
     new THREE.SphereGeometry(2.2, 64, 64),
-    mat({ color: 0xffb3c8, roughness: 0.4, transparent: true, opacity: 0.85, side: THREE.DoubleSide }),
+    mat({
+      color: 0xffb3c8,
+      roughness: 0.4,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+    }),
   );
   group.add(tropho);
   outerMeshes.push(tropho);
@@ -170,14 +293,27 @@ function buildDay5(): StageBuild {
   // Blastocoele cavity — soft glowing fluid interior
   const cavity = new THREE.Mesh(
     new THREE.SphereGeometry(2.05, 48, 48),
-    mat({ color: 0x88ddff, transmission: 0.9, transparent: true, opacity: 0.25, roughness: 0.1, ior: 1.33, thickness: 1 }),
+    mat({
+      color: 0x88ddff,
+      transmission: 0.9,
+      transparent: true,
+      opacity: 0.25,
+      roughness: 0.1,
+      ior: 1.33,
+      thickness: 1,
+    }),
   );
   group.add(cavity);
 
   // Inner cell mass (blue pluripotent stem cells) — clustered on one pole
   const icm = new THREE.Group();
   icm.position.set(0, 1.35, 0);
-  const icmMat = mat({ color: 0x4aa8ff, emissive: 0x1a4a99, emissiveIntensity: 0.3, roughness: 0.35 });
+  const icmMat = mat({
+    color: 0x4aa8ff,
+    emissive: 0x1a4a99,
+    emissiveIntensity: 0.3,
+    roughness: 0.35,
+  });
   for (let i = 0; i < 14; i++) {
     const a = (i / 14) * Math.PI * 2;
     const r = 0.35 + Math.random() * 0.15;
@@ -189,9 +325,24 @@ function buildDay5(): StageBuild {
   explodable.push({ mesh: icm, dir: new THREE.Vector3(0, 1, 0), base: icm.position.clone() });
 
   labels.push(
-    makeLabel("tropho", "Trophoblast", [2.3, 0.4, 0], "Outer flat cells that will form the placenta and extraembryonic membranes."),
-    makeLabel("blastocoele", "Blastocoele", [-1.3, -0.3, 0.8], "Fluid-filled cavity created by pumping sodium and water inward."),
-    makeLabel("icm", "Inner Cell Mass", [0.3, 1.9, 0], "Pluripotent stem cells that will become the entire embryo."),
+    makeLabel(
+      "tropho",
+      "Trophoblast",
+      [2.3, 0.4, 0],
+      "Outer flat cells that will form the placenta and extraembryonic membranes.",
+    ),
+    makeLabel(
+      "blastocoele",
+      "Blastocoele",
+      [-1.3, -0.3, 0.8],
+      "Fluid-filled cavity created by pumping sodium and water inward.",
+    ),
+    makeLabel(
+      "icm",
+      "Inner Cell Mass",
+      [0.3, 1.9, 0],
+      "Pluripotent stem cells that will become the entire embryo.",
+    ),
   );
 
   return { group, labels, outerMeshes, explodable };
@@ -216,7 +367,14 @@ function buildDay8(): StageBuild {
   // Amniotic cavity (top dome)
   const amnion = new THREE.Mesh(
     new THREE.SphereGeometry(1.1, 40, 32, 0, Math.PI * 2, 0, Math.PI / 2),
-    mat({ color: 0xbfeaff, transmission: 0.9, transparent: true, opacity: 0.4, roughness: 0.1, side: THREE.DoubleSide }),
+    mat({
+      color: 0xbfeaff,
+      transmission: 0.9,
+      transparent: true,
+      opacity: 0.4,
+      roughness: 0.1,
+      side: THREE.DoubleSide,
+    }),
   );
   amnion.position.y = 0.05;
   group.add(amnion);
@@ -225,7 +383,14 @@ function buildDay8(): StageBuild {
   // Yolk sac (bottom dome)
   const yolk = new THREE.Mesh(
     new THREE.SphereGeometry(1.15, 40, 32, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
-    mat({ color: 0xffe08a, transmission: 0.85, transparent: true, opacity: 0.45, roughness: 0.15, side: THREE.DoubleSide }),
+    mat({
+      color: 0xffe08a,
+      transmission: 0.85,
+      transparent: true,
+      opacity: 0.45,
+      roughness: 0.15,
+      side: THREE.DoubleSide,
+    }),
   );
   yolk.position.y = -0.05;
   group.add(yolk);
@@ -245,15 +410,48 @@ function buildDay8(): StageBuild {
   hypoblast.position.y = -0.09;
   disc.add(epiblast, hypoblast);
   group.add(disc);
-  explodable.push({ mesh: epiblast, dir: new THREE.Vector3(0, 1, 0), base: epiblast.position.clone() });
-  explodable.push({ mesh: hypoblast, dir: new THREE.Vector3(0, -1, 0), base: hypoblast.position.clone() });
+  explodable.push({
+    mesh: epiblast,
+    dir: new THREE.Vector3(0, 1, 0),
+    base: epiblast.position.clone(),
+  });
+  explodable.push({
+    mesh: hypoblast,
+    dir: new THREE.Vector3(0, -1, 0),
+    base: hypoblast.position.clone(),
+  });
 
   labels.push(
-    makeLabel("epiblast", "Epiblast", [1.3, 0.4, 0], "Upper layer — will give rise to all three germ layers."),
-    makeLabel("hypoblast", "Hypoblast", [1.3, -0.4, 0], "Lower layer — contributes to extraembryonic endoderm."),
-    makeLabel("amnion", "Amniotic Cavity", [0, 1.3, 0], "Fluid space that will surround the growing embryo."),
-    makeLabel("yolk", "Yolk Sac", [0, -1.3, 0], "Early nutrition and site of first blood cell formation."),
-    makeLabel("endo", "Endometrium", [-2.5, 0.5, 0], "Maternal uterine lining — the embryo is now implanted."),
+    makeLabel(
+      "epiblast",
+      "Epiblast",
+      [1.3, 0.4, 0],
+      "Upper layer — will give rise to all three germ layers.",
+    ),
+    makeLabel(
+      "hypoblast",
+      "Hypoblast",
+      [1.3, -0.4, 0],
+      "Lower layer — contributes to extraembryonic endoderm.",
+    ),
+    makeLabel(
+      "amnion",
+      "Amniotic Cavity",
+      [0, 1.3, 0],
+      "Fluid space that will surround the growing embryo.",
+    ),
+    makeLabel(
+      "yolk",
+      "Yolk Sac",
+      [0, -1.3, 0],
+      "Early nutrition and site of first blood cell formation.",
+    ),
+    makeLabel(
+      "endo",
+      "Endometrium",
+      [-2.5, 0.5, 0],
+      "Maternal uterine lining — the embryo is now implanted.",
+    ),
   );
 
   return { group, labels, outerMeshes, explodable };
@@ -298,7 +496,11 @@ function buildDay16(): StageBuild {
 
   explodable.push({ mesh: ecto, dir: new THREE.Vector3(0, 1, 0), base: ecto.position.clone() });
   explodable.push({ mesh: meso, dir: new THREE.Vector3(0, 0, 0.001), base: meso.position.clone() });
-  explodable.push({ mesh: endoLayer, dir: new THREE.Vector3(0, -1, 0), base: endoLayer.position.clone() });
+  explodable.push({
+    mesh: endoLayer,
+    dir: new THREE.Vector3(0, -1, 0),
+    base: endoLayer.position.clone(),
+  });
 
   // Migrating cells (particles between layers)
   const migrating: THREE.Mesh[] = [];
@@ -314,9 +516,19 @@ function buildDay16(): StageBuild {
 
   labels.push(
     makeLabel("ecto", "Ectoderm", [1.9, 0.55, 0], "Future skin and nervous system."),
-    makeLabel("meso", "Mesoderm", [1.9, 0.25, 0], "New middle layer — muscles, bones, blood, kidneys."),
+    makeLabel(
+      "meso",
+      "Mesoderm",
+      [1.9, 0.25, 0],
+      "New middle layer — muscles, bones, blood, kidneys.",
+    ),
     makeLabel("endo", "Endoderm", [1.9, -0.05, 0], "Gut lining, lungs, liver, pancreas."),
-    makeLabel("streak", "Primitive Streak", [0.5, 0.72, 0], "Groove where epiblast cells ingress to form meso- and endoderm."),
+    makeLabel(
+      "streak",
+      "Primitive Streak",
+      [0.5, 0.72, 0],
+      "Groove where epiblast cells ingress to form meso- and endoderm.",
+    ),
   );
 
   const update = (t: number) => {
@@ -357,7 +569,12 @@ function buildDay21(): StageBuild {
   group.add(canal);
 
   // Somites — paired cubes along both sides
-  const somMat = mat({ color: 0xff77aa, emissive: 0x881144, emissiveIntensity: 0.35, roughness: 0.35 });
+  const somMat = mat({
+    color: 0xff77aa,
+    emissive: 0x881144,
+    emissiveIntensity: 0.35,
+    roughness: 0.35,
+  });
   for (let i = -3; i <= 3; i++) {
     const x = i * 0.42;
     const sL = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.34, 0.34), somMat);
@@ -381,10 +598,30 @@ function buildDay21(): StageBuild {
   outerMeshes.push(tube);
 
   labels.push(
-    makeLabel("tube", "Neural Tube", [0, 0.55, 0], "Closing dorsal cylinder — future brain and spinal cord."),
-    makeLabel("somL", "Somites (Left)", [0, 0, 1], "Paired paraxial mesoderm blocks — future vertebrae, muscles and dermis."),
-    makeLabel("somR", "Somites (Right)", [0, 0, -1], "Paired paraxial mesoderm blocks — bilateral segmentation of the body."),
-    makeLabel("noto", "Notochord", [1.6, -0.6, 0], "Signaling rod that induced neural tube formation."),
+    makeLabel(
+      "tube",
+      "Neural Tube",
+      [0, 0.55, 0],
+      "Closing dorsal cylinder — future brain and spinal cord.",
+    ),
+    makeLabel(
+      "somL",
+      "Somites (Left)",
+      [0, 0, 1],
+      "Paired paraxial mesoderm blocks — future vertebrae, muscles and dermis.",
+    ),
+    makeLabel(
+      "somR",
+      "Somites (Right)",
+      [0, 0, -1],
+      "Paired paraxial mesoderm blocks — bilateral segmentation of the body.",
+    ),
+    makeLabel(
+      "noto",
+      "Notochord",
+      [1.6, -0.6, 0],
+      "Signaling rod that induced neural tube formation.",
+    ),
   );
 
   return { group, labels, outerMeshes, explodable };
@@ -409,14 +646,25 @@ function buildDay28(): StageBuild {
   const curve = cCurve;
   const body = new THREE.Mesh(
     new THREE.TubeGeometry(curve, 80, 0.42, 24, false),
-    mat({ color: 0xffcbb0, emissive: 0x552211, emissiveIntensity: 0.2, roughness: 0.45, clearcoat: 0.5 }),
+    mat({
+      color: 0xffcbb0,
+      emissive: 0x552211,
+      emissiveIntensity: 0.2,
+      roughness: 0.45,
+      clearcoat: 0.5,
+    }),
   );
   group.add(body);
   outerMeshes.push(body);
 
   // Head / brain vesicles (three swellings at head end)
   const headPos = curve.getPoint(0);
-  const brainMat = mat({ color: 0xbfa8ff, emissive: 0x442288, emissiveIntensity: 0.35, roughness: 0.35 });
+  const brainMat = mat({
+    color: 0xbfa8ff,
+    emissive: 0x442288,
+    emissiveIntensity: 0.35,
+    roughness: 0.35,
+  });
   const brain1 = new THREE.Mesh(new THREE.SphereGeometry(0.52, 24, 24), brainMat);
   brain1.position.copy(headPos).add(new THREE.Vector3(-0.25, 0.35, 0));
   const brain2 = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 24), brainMat);
@@ -438,7 +686,10 @@ function buildDay28(): StageBuild {
 
   // Heart bulge
   const heartMat = mat({
-    color: 0xff2244, emissive: 0xff2244, emissiveIntensity: 0.9, roughness: 0.3,
+    color: 0xff2244,
+    emissive: 0xff2244,
+    emissiveIntensity: 0.9,
+    roughness: 0.3,
   });
   const heart = new THREE.Mesh(new THREE.SphereGeometry(0.36, 32, 32), heartMat);
   const heartPos = curve.getPoint(0.28);
@@ -460,17 +711,45 @@ function buildDay28(): StageBuild {
 
   // Tail
   const tailPos = curve.getPoint(1);
-  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.7, 20), mat({ color: 0xffcbb0, roughness: 0.5 }));
+  const tail = new THREE.Mesh(
+    new THREE.ConeGeometry(0.32, 0.7, 20),
+    mat({ color: 0xffcbb0, roughness: 0.5 }),
+  );
   tail.position.copy(tailPos);
   tail.rotation.z = -Math.PI / 4;
   group.add(tail);
 
   labels.push(
-    makeLabel("brain", "Brain Vesicles", [brain2.position.x + 0.2, brain2.position.y + 0.6, 0], "Forebrain, midbrain and hindbrain swellings of the neural tube."),
-    makeLabel("heart", "Beating Heart", [heart.position.x + 0.6, heart.position.y, 0.4], "S-shaped looping heart tube — already contracting at ~160 BPM."),
-    makeLabel("limb", "Limb Buds", [1.6, -1.2, 0.5], "Mesenchymal outgrowths that will become arms and legs."),
-    makeLabel("arches", "Pharyngeal Arches", [-1.1, 1.4, 0], "Neck ridges that shape the jaw, ear and throat."),
-    makeLabel("tail", "Embryonic Tail", [tailPos.x - 0.5, tailPos.y - 0.5, 0], "Transient tail — regresses over the coming weeks."),
+    makeLabel(
+      "brain",
+      "Brain Vesicles",
+      [brain2.position.x + 0.2, brain2.position.y + 0.6, 0],
+      "Forebrain, midbrain and hindbrain swellings of the neural tube.",
+    ),
+    makeLabel(
+      "heart",
+      "Beating Heart",
+      [heart.position.x + 0.6, heart.position.y, 0.4],
+      "S-shaped looping heart tube — already contracting at ~160 BPM.",
+    ),
+    makeLabel(
+      "limb",
+      "Limb Buds",
+      [1.6, -1.2, 0.5],
+      "Mesenchymal outgrowths that will become arms and legs.",
+    ),
+    makeLabel(
+      "arches",
+      "Pharyngeal Arches",
+      [-1.1, 1.4, 0],
+      "Neck ridges that shape the jaw, ear and throat.",
+    ),
+    makeLabel(
+      "tail",
+      "Embryonic Tail",
+      [tailPos.x - 0.5, tailPos.y - 0.5, 0],
+      "Transient tail — regresses over the coming weeks.",
+    ),
   );
 
   explodable.push(
@@ -493,12 +772,19 @@ function buildDay28(): StageBuild {
 
 export function buildStage(id: StageId): StageBuild {
   switch (id) {
-    case "day1": return buildDay1();
-    case "day3": return buildDay3();
-    case "day5": return buildDay5();
-    case "day8": return buildDay8();
-    case "day16": return buildDay16();
-    case "day21": return buildDay21();
-    case "day28": return buildDay28();
+    case "day1":
+      return buildDay1();
+    case "day3":
+      return buildDay3();
+    case "day5":
+      return buildDay5();
+    case "day8":
+      return buildDay8();
+    case "day16":
+      return buildDay16();
+    case "day21":
+      return buildDay21();
+    case "day28":
+      return buildDay28();
   }
 }
