@@ -63,11 +63,19 @@ export function EmbryoScene({
     const mount = mountRef.current;
     if (!mount) return;
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance",
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance",
+        failIfMajorPerformanceCaveat: false,
+      });
+    } catch (e) {
+      console.error("WebGL renderer initialization failed:", e);
+      return;
+    }
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.localClippingEnabled = true;
