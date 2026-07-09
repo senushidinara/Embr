@@ -58,6 +58,42 @@ function Index() {
   // Reset label selection when day changes
   useEffect(() => { setSelected(null); }, [dayIdx]);
 
+  // Compute non-overlapping label positions
+  const computedLabels = useMemo(() => {
+    const labelRadius = 24;
+    const minDistance = 56;
+    const result: (typeof labels[0] & { adjustedX: number; adjustedY: number; collision: boolean })[] = [];
+
+    labels.forEach((lb) => {
+      let x = lb.screen.x;
+      let y = lb.screen.y;
+      let collision = false;
+
+      // Check against already placed labels
+      for (const existing of result) {
+        const dx = x - existing.adjustedX;
+        const dy = y - existing.adjustedY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < minDistance) {
+          collision = true;
+          const angle = Math.atan2(dy, dx);
+          const pushDist = minDistance - dist + 4;
+          x += Math.cos(angle) * pushDist;
+          y += Math.sin(angle) * pushDist;
+        }
+      }
+
+      // Keep within viewport bounds
+      x = Math.max(labelRadius, Math.min(window.innerWidth - labelRadius, x));
+      y = Math.max(labelRadius, Math.min(window.innerHeight - labelRadius, y));
+
+      result.push({ ...lb, adjustedX: x, adjustedY: y, collision });
+    });
+
+    return result;
+  }, [labels]);
+
   // Keyboard controls: ← → to step, space to play/pause
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -84,20 +120,24 @@ function Index() {
 
       {/* Label overlays */}
       <div className="pointer-events-none absolute inset-0">
-        {labels.map((lb) =>
+        {computedLabels.map((lb) =>
           lb.screen.visible ? (
-            <button
+            <div
               key={lb.key}
-              onClick={() => setSelected(lb.key === selected ? null : lb.key)}
-              className={`pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2.5 py-1 text-[11px] font-medium mono transition
-                ${selected === lb.key
-                  ? "border-primary bg-primary text-primary-foreground shadow-[0_0_20px_rgb(255_100_170/0.5)]"
-                  : "border-white/25 bg-black/45 text-white/90 backdrop-blur-md hover:border-primary/70"}`}
-              style={{ left: lb.screen.x, top: lb.screen.y }}
+              className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+              style={{ left: lb.adjustedX, top: lb.adjustedY }}
             >
-              <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-              {lb.text}
-            </button>
+              <button
+                onClick={() => setSelected(lb.key === selected ? null : lb.key)}
+                className={`pointer-events-auto flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium mono transition whitespace-nowrap
+                  ${selected === lb.key
+                    ? "border-primary bg-primary text-primary-foreground shadow-[0_0_20px_rgb(255_100_170/0.5)]"
+                    : "border-white/25 bg-black/50 text-white/90 backdrop-blur-md hover:border-primary/70 hover:bg-black/70"}`}
+              >
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                {lb.text}
+              </button>
+            </div>
           ) : null,
         )}
       </div>
