@@ -21,11 +21,18 @@ export interface DaySceneBuild {
 const mat = (opts: THREE.MeshPhysicalMaterialParameters) =>
   new THREE.MeshPhysicalMaterial({ roughness: 0.35, clearcoat: 0.4, ...opts });
 
-const basicMat = (opts: THREE.MeshBasicMaterialParameters) =>
-  new THREE.MeshBasicMaterial(opts);
+const basicMat = (opts: THREE.MeshBasicMaterialParameters) => new THREE.MeshBasicMaterial(opts);
 
-const mkLabel = (key: string, text: string, p: [number, number, number], desc: string): DaySceneLabel => ({
-  key, text, position: new THREE.Vector3(...p), description: desc,
+const mkLabel = (
+  key: string,
+  text: string,
+  p: [number, number, number],
+  desc: string,
+): DaySceneLabel => ({
+  key,
+  text,
+  position: new THREE.Vector3(...p),
+  description: desc,
 });
 
 function makeParticles(
@@ -36,7 +43,13 @@ function makeParticles(
   const points: THREE.Mesh[] = [];
   const seeds: { x: number; y: number; z: number; s: number; ph: number }[] = [];
   const geom = new THREE.SphereGeometry(radius, 8, 8);
-  const material = mat({ color, emissive: color, emissiveIntensity: 0.8, transparent: true, opacity: 0.9 });
+  const material = mat({
+    color,
+    emissive: color,
+    emissiveIntensity: 0.8,
+    transparent: true,
+    opacity: 0.9,
+  });
   for (let i = 0; i < n; i++) {
     const p = new THREE.Mesh(geom, material.clone());
     points.push(p);
@@ -87,14 +100,23 @@ function day1(): DaySceneBuild {
   // Oocyte + zona
   const zona = new THREE.Mesh(
     new THREE.SphereGeometry(2.4, 64, 64),
-    mat({ color: 0xf7c8dc, transmission: 0.85, transparent: true, opacity: 0.35, roughness: 0.15, ior: 1.3 }),
+    mat({
+      color: 0xf7c8dc,
+      transmission: 0.85,
+      transparent: true,
+      opacity: 0.35,
+      roughness: 0.15,
+      ior: 1.3,
+    }),
   );
-  g.add(zona); outer.push(zona);
+  g.add(zona);
+  outer.push(zona);
   const membrane = new THREE.Mesh(
     new THREE.SphereGeometry(2.0, 48, 48),
     mat({ color: 0xffe4ec, transmission: 0.4, transparent: true, opacity: 0.55, roughness: 0.5 }),
   );
-  g.add(membrane); outer.push(membrane);
+  g.add(membrane);
+  outer.push(membrane);
 
   // Sperm (head + tail) approaching from left
   const sperm = new THREE.Group();
@@ -115,7 +137,13 @@ function day1(): DaySceneBuild {
   // Acrosome flash sphere (grows/fades on contact)
   const acrosome = new THREE.Mesh(
     new THREE.SphereGeometry(0.25, 20, 20),
-    mat({ color: 0xffffcc, emissive: 0xffee77, emissiveIntensity: 1.2, transparent: true, opacity: 0 }),
+    mat({
+      color: 0xffffcc,
+      emissive: 0xffee77,
+      emissiveIntensity: 1.2,
+      transparent: true,
+      opacity: 0,
+    }),
   );
   g.add(acrosome);
 
@@ -128,7 +156,8 @@ function day1(): DaySceneBuild {
   const gr = makeParticles(40, 0xffe4a0, 0.04);
   gr.points.forEach((p, i) => {
     const s = gr.seeds[i];
-    const th = s.x * Math.PI, ph = s.y * Math.PI;
+    const th = s.x * Math.PI,
+      ph = s.y * Math.PI;
     p.position.setFromSphericalCoords(1.95, ph, th);
     g.add(p);
   });
@@ -144,16 +173,38 @@ function day1(): DaySceneBuild {
   // Meiotic spindle (fibrous)
   const spindle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.02, 0.02, 0.6, 8),
-    mat({ color: 0xffcce0, emissive: 0xff88bb, emissiveIntensity: 0.6, transparent: true, opacity: 0.9 }),
+    mat({
+      color: 0xffcce0,
+      emissive: 0xff88bb,
+      emissiveIntensity: 0.6,
+      transparent: true,
+      opacity: 0.9,
+    }),
   );
   spindle.position.set(0, 1.6, 0);
   g.add(spindle);
 
   // Pronuclei
-  const pn1 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 24, 24),
-    mat({ color: 0x8ec5ff, emissive: 0x2244aa, emissiveIntensity: 0.4, transparent: true, opacity: 0 }));
-  const pn2 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 24, 24),
-    mat({ color: 0xffb3c8, emissive: 0xaa2255, emissiveIntensity: 0.4, transparent: true, opacity: 0 }));
+  const pn1 = new THREE.Mesh(
+    new THREE.SphereGeometry(0.4, 24, 24),
+    mat({
+      color: 0x8ec5ff,
+      emissive: 0x2244aa,
+      emissiveIntensity: 0.4,
+      transparent: true,
+      opacity: 0,
+    }),
+  );
+  const pn2 = new THREE.Mesh(
+    new THREE.SphereGeometry(0.4, 24, 24),
+    mat({
+      color: 0xffb3c8,
+      emissive: 0xaa2255,
+      emissiveIntensity: 0.4,
+      transparent: true,
+      opacity: 0,
+    }),
+  );
   pn1.position.set(-0.6, 0.1, 0);
   pn2.position.set(0.6, -0.1, 0);
   g.add(pn1, pn2);
@@ -171,9 +222,24 @@ function day1(): DaySceneBuild {
   g.add(shimmer);
 
   labels.push(
-    mkLabel("zona", "Zona Pellucida", [0, 2.6, 0], "Glycoprotein shell — hardens after sperm entry."),
-    mkLabel("sperm", "Sperm", [-2.8, 0.4, 0], "Single fertilizing sperm; tail detaches after fusion."),
-    mkLabel("acrosome", "Acrosome Reaction", [-1.8, 0.2, 0], "Enzymatic burst that digests the zona."),
+    mkLabel(
+      "zona",
+      "Zona Pellucida",
+      [0, 2.6, 0],
+      "Glycoprotein shell — hardens after sperm entry.",
+    ),
+    mkLabel(
+      "sperm",
+      "Sperm",
+      [-2.8, 0.4, 0],
+      "Single fertilizing sperm; tail detaches after fusion.",
+    ),
+    mkLabel(
+      "acrosome",
+      "Acrosome Reaction",
+      [-1.8, 0.2, 0],
+      "Enzymatic burst that digests the zona.",
+    ),
     mkLabel("polar", "2nd Polar Body", [0.4, 2.35, 0], "Ejected as oocyte completes meiosis II."),
     mkLabel("pn1", "Male Pronucleus", [-0.9, 0.7, 0], "Paternal DNA decondensing."),
     mkLabel("pn2", "Female Pronucleus", [0.9, -0.5, 0], "Maternal DNA awaiting syngamy."),
@@ -209,7 +275,10 @@ function day1(): DaySceneBuild {
     (polar.material as THREE.MeshPhysicalMaterial).opacity = pbOp;
     // 7. Meiotic spindle rotation
     spindle.rotation.z = t * 0.5;
-    (spindle.material as THREE.MeshPhysicalMaterial).opacity = Math.max(0, 0.9 - Math.max(0, (t - 5.5) / 2));
+    (spindle.material as THREE.MeshPhysicalMaterial).opacity = Math.max(
+      0,
+      0.9 - Math.max(0, (t - 5.5) / 2),
+    );
     // 8. Pronuclei fade in and drift
     const pnOp = Math.max(0, Math.min(1, (t - 6) / 2));
     (pn1.material as THREE.MeshPhysicalMaterial).opacity = pnOp;
@@ -217,9 +286,10 @@ function day1(): DaySceneBuild {
     pn1.position.x = -0.6 + Math.sin(t * 0.6) * 0.15;
     pn2.position.x = 0.6 + Math.cos(t * 0.5) * 0.15;
     // 9. PLCζ oscillation
-    plcz.intensity = t > 3 ? (0.8 + Math.sin(t * 2) * 0.6) : 0;
+    plcz.intensity = t > 3 ? 0.8 + Math.sin(t * 2) * 0.6 : 0;
     // 10. Zona shimmer
-    (shimmer.material as THREE.MeshPhysicalMaterial).opacity = 0.15 + Math.abs(Math.sin(t * 1.5)) * 0.3;
+    (shimmer.material as THREE.MeshPhysicalMaterial).opacity =
+      0.15 + Math.abs(Math.sin(t * 1.5)) * 0.3;
     shimmer.rotation.z = t * 0.3;
   };
 
@@ -227,7 +297,10 @@ function day1(): DaySceneBuild {
 }
 
 // -------- Small utility: cleavage sphere with N blastomeres inside zona
-function cleavageStage(nCells: number, opts: { size?: number; zonaOp?: number } = {}): DaySceneBuild {
+function cleavageStage(
+  nCells: number,
+  opts: { size?: number; zonaOp?: number } = {},
+): DaySceneBuild {
   const g = new THREE.Group();
   const labels: DaySceneLabel[] = [];
   const outer: THREE.Mesh[] = [];
@@ -236,13 +309,27 @@ function cleavageStage(nCells: number, opts: { size?: number; zonaOp?: number } 
   const zonaR = 2.4;
   const zona = new THREE.Mesh(
     new THREE.SphereGeometry(zonaR, 48, 48),
-    mat({ color: 0xf7c8dc, transmission: 0.85, transparent: true, opacity: opts.zonaOp ?? 0.3, roughness: 0.15, ior: 1.3 }),
+    mat({
+      color: 0xf7c8dc,
+      transmission: 0.85,
+      transparent: true,
+      opacity: opts.zonaOp ?? 0.3,
+      roughness: 0.15,
+      ior: 1.3,
+    }),
   );
-  g.add(zona); outer.push(zona);
+  g.add(zona);
+  outer.push(zona);
 
   const r = opts.size ?? Math.pow(1 / nCells, 1 / 3) * 1.4;
   const cellGeo = new THREE.SphereGeometry(r, 20, 20);
-  const cellMat = mat({ color: 0xffd6e4, roughness: 0.3, clearcoat: 0.7, sheen: 1, sheenColor: 0xffaacc });
+  const cellMat = mat({
+    color: 0xffd6e4,
+    roughness: 0.3,
+    clearcoat: 0.7,
+    sheen: 1,
+    sheenColor: 0xffaacc,
+  });
   const cells: THREE.Mesh[] = [];
   const R = nCells <= 2 ? 0 : nCells <= 4 ? 0.55 : 0.95;
   const phi = Math.PI * (Math.sqrt(5) - 1);
@@ -253,7 +340,8 @@ function cleavageStage(nCells: number, opts: { size?: number; zonaOp?: number } 
       const p = new THREE.Vector3(i === 0 ? -r * 0.95 : r * 0.95, 0, 0);
       const m = new THREE.Mesh(cellGeo, cellMat.clone());
       m.position.copy(p);
-      g.add(m); cells.push(m);
+      g.add(m);
+      cells.push(m);
       explodable.push({ mesh: m, dir: p.clone().normalize(), base: p.clone() });
     }
   } else {
@@ -269,14 +357,25 @@ function cleavageStage(nCells: number, opts: { size?: number; zonaOp?: number } 
       );
       const m = new THREE.Mesh(cellGeo, cellMat.clone());
       m.position.copy(p);
-      g.add(m); cells.push(m);
+      g.add(m);
+      cells.push(m);
       explodable.push({ mesh: m, dir: p.clone().normalize(), base: p.clone() });
     }
   }
 
   labels.push(
-    mkLabel("cells", `Blastomeres (${nCells})`, [0, 1.6, 0], "Totipotent cleavage cells inside the zona pellucida."),
-    mkLabel("zona", "Zona Pellucida", [0, 2.6, 0], "Glycoprotein shell — reductive cleavage keeps outer size constant."),
+    mkLabel(
+      "cells",
+      `Blastomeres (${nCells})`,
+      [0, 1.6, 0],
+      "Totipotent cleavage cells inside the zona pellucida.",
+    ),
+    mkLabel(
+      "zona",
+      "Zona Pellucida",
+      [0, 2.6, 0],
+      "Glycoprotein shell — reductive cleavage keeps outer size constant.",
+    ),
   );
 
   const update = (t: number) => {
@@ -297,7 +396,13 @@ function day2(): DaySceneBuild {
   // Spindle rod between the two cells
   const spindle = new THREE.Mesh(
     new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8),
-    mat({ color: 0xffe0ee, emissive: 0xff77bb, emissiveIntensity: 0.7, transparent: true, opacity: 0.7 }),
+    mat({
+      color: 0xffe0ee,
+      emissive: 0xff77bb,
+      emissiveIntensity: 0.7,
+      transparent: true,
+      opacity: 0.7,
+    }),
   );
   spindle.rotation.z = Math.PI / 2;
   g.add(spindle);
@@ -310,7 +415,8 @@ function day2(): DaySceneBuild {
       mat({ color: 0x88ccff, emissive: 0x2255aa, emissiveIntensity: 0.6 }),
     );
     c.position.set((i - 2.5) * 0.15, 0, 0);
-    g.add(c); chromos.push(c);
+    g.add(c);
+    chromos.push(c);
   }
 
   // Cleavage furrow ring
@@ -322,7 +428,7 @@ function day2(): DaySceneBuild {
   const cyto = makeParticles(30, 0xffaadd, 0.03);
   cyto.points.forEach((p, i) => {
     const s = cyto.seeds[i];
-    p.position.set((s.x) * 1.4, (s.y) * 1.4, (s.z) * 1.4);
+    p.position.set(s.x * 1.4, s.y * 1.4, s.z * 1.4);
     g.add(p);
   });
 
@@ -333,8 +439,13 @@ function day2(): DaySceneBuild {
   // Tubal cilia arrows (outside zona)
   const arrows: THREE.ArrowHelper[] = [];
   for (let i = 0; i < 4; i++) {
-    const a = makeArrow(new THREE.Vector3(-3, -1 + i * 0.6, 0), new THREE.Vector3(-1.5, -1 + i * 0.6, 0), 0x88ffcc);
-    g.add(a); arrows.push(a);
+    const a = makeArrow(
+      new THREE.Vector3(-3, -1 + i * 0.6, 0),
+      new THREE.Vector3(-1.5, -1 + i * 0.6, 0),
+      0x88ffcc,
+    );
+    g.add(a);
+    arrows.push(a);
   }
 
   const prevUpdate = base.update!;
@@ -355,7 +466,8 @@ function day2(): DaySceneBuild {
     // Cyto streaming
     cyto.points.forEach((p, i) => {
       const s = cyto.seeds[i];
-      p.position.x = Math.cos(t * s.s + s.ph) * 0.9 * (i % 2 === 0 ? -1 : 1) - 0.95 * (i % 2 === 0 ? -1 : 1);
+      p.position.x =
+        Math.cos(t * s.s + s.ph) * 0.9 * (i % 2 === 0 ? -1 : 1) - 0.95 * (i % 2 === 0 ? -1 : 1);
       p.position.y = Math.sin(t * s.s + s.ph) * 0.5;
     });
     // MPF flash pulse
@@ -388,13 +500,20 @@ function day3(): DaySceneBuild {
     const from = new THREE.Vector3(Math.cos(th) * 1.1, 0, Math.sin(th) * 1.1);
     const to = from.clone().multiplyScalar(1.4);
     const a = makeArrow(from, to, 0x88ccff);
-    g.add(a); arrows.push(a);
+    g.add(a);
+    arrows.push(a);
   }
 
   // Inner (Oct4+) glow — small blue sphere at center
   const inner = new THREE.Mesh(
     new THREE.SphereGeometry(0.35, 20, 20),
-    mat({ color: 0x4aa8ff, emissive: 0x1a4a99, emissiveIntensity: 0.6, transparent: true, opacity: 0.7 }),
+    mat({
+      color: 0x4aa8ff,
+      emissive: 0x1a4a99,
+      emissiveIntensity: 0.6,
+      transparent: true,
+      opacity: 0.7,
+    }),
   );
   g.add(inner);
 
@@ -432,11 +551,12 @@ function day4(): DaySceneBuild {
   const naArrows: THREE.ArrowHelper[] = [];
   for (let i = 0; i < 10; i++) {
     const th = (i / 10) * Math.PI * 2;
-    const y = (i % 3 - 1) * 0.4;
+    const y = ((i % 3) - 1) * 0.4;
     const from = new THREE.Vector3(Math.cos(th) * 1.3, y, Math.sin(th) * 1.3);
     const to = from.clone().multiplyScalar(0.3);
     const a = makeArrow(from, to, 0xffee55);
-    g.add(a); naArrows.push(a);
+    g.add(a);
+    naArrows.push(a);
   }
 
   // Micro-cavity blobs (small transparent bubbles inside)
@@ -448,7 +568,8 @@ function day4(): DaySceneBuild {
       mat({ color: 0x88ddff, transmission: 0.9, transparent: true, opacity: 0.35, roughness: 0.1 }),
     );
     c.position.set((rnd() - 0.5) * 1.2, (rnd() - 0.5) * 1.2, (rnd() - 0.5) * 1.2);
-    g.add(c); cavities.push(c);
+    g.add(c);
+    cavities.push(c);
   }
 
   // ICM cluster (eccentric)
@@ -480,7 +601,7 @@ function day4(): DaySceneBuild {
     icm.scale.setScalar(1 + Math.sin(t * 1.5) * 0.1);
     water.points.forEach((p, i) => {
       const s = water.seeds[i];
-      const phase = ((t * 0.4 + s.ph) % 1);
+      const phase = (t * 0.4 + s.ph) % 1;
       const dir = new THREE.Vector3(s.x, s.y, s.z).normalize();
       p.position.copy(dir.multiplyScalar(2 * (1 - phase)));
       (p.material as THREE.MeshPhysicalMaterial).opacity = phase;
@@ -500,23 +621,45 @@ function blastocyst(subDay: number): DaySceneBuild {
   const trophoR = 2.2;
   const tropho = new THREE.Mesh(
     new THREE.SphereGeometry(trophoR, 64, 64),
-    mat({ color: 0xffb3c8, roughness: 0.4, transparent: true, opacity: 0.85, side: THREE.DoubleSide }),
+    mat({
+      color: 0xffb3c8,
+      roughness: 0.4,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+    }),
   );
-  g.add(tropho); outer.push(tropho);
+  g.add(tropho);
+  outer.push(tropho);
 
   // Blastocoele glow
   const cavity = new THREE.Mesh(
     new THREE.SphereGeometry(2.05, 48, 48),
-    mat({ color: 0x88ddff, transmission: 0.9, transparent: true, opacity: 0.25, roughness: 0.1, ior: 1.33, thickness: 1 }),
+    mat({
+      color: 0x88ddff,
+      transmission: 0.9,
+      transparent: true,
+      opacity: 0.25,
+      roughness: 0.1,
+      ior: 1.33,
+      thickness: 1,
+    }),
   );
   g.add(cavity);
 
   // Zona (shrinks/cracks by day 6, gone by day 7)
   const zona = new THREE.Mesh(
     new THREE.SphereGeometry(2.5, 48, 48),
-    mat({ color: 0xf7c8dc, transmission: 0.85, transparent: true, opacity: subDay < 0.34 ? 0.25 : subDay < 0.67 ? 0.15 : 0.05, roughness: 0.15 }),
+    mat({
+      color: 0xf7c8dc,
+      transmission: 0.85,
+      transparent: true,
+      opacity: subDay < 0.34 ? 0.25 : subDay < 0.67 ? 0.15 : 0.05,
+      roughness: 0.15,
+    }),
   );
-  g.add(zona); outer.push(zona);
+  g.add(zona);
+  outer.push(zona);
 
   // ICM cluster
   const icmGrp = new THREE.Group();
@@ -540,7 +683,8 @@ function blastocyst(subDay: number): DaySceneBuild {
       mat({ color: 0xffd166, emissive: 0x996611, emissiveIntensity: 0.4 }),
     );
     p.position.set((i - 2.5) * 0.15, 0.85, 0);
-    g.add(p); pe.push(p);
+    g.add(p);
+    pe.push(p);
   }
 
   // FGF4 arrows radiating out from ICM
@@ -550,13 +694,20 @@ function blastocyst(subDay: number): DaySceneBuild {
     const from = new THREE.Vector3(Math.cos(th) * 0.3, 1.35, Math.sin(th) * 0.3);
     const to = from.clone().add(new THREE.Vector3(Math.cos(th) * 0.6, -0.3, Math.sin(th) * 0.6));
     const a = makeArrow(from, to, 0xffaa66);
-    g.add(a); fgf.push(a);
+    g.add(a);
+    fgf.push(a);
   }
 
   // Hatching crack (only for day 6/7)
   const crack = new THREE.Mesh(
     new THREE.TorusGeometry(0.4, 0.03, 8, 24),
-    mat({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1, transparent: true, opacity: subDay > 0.34 ? 0.7 : 0 }),
+    mat({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 1,
+      transparent: true,
+      opacity: subDay > 0.34 ? 0.7 : 0,
+    }),
   );
   crack.position.set(2.4, 0, 0);
   crack.lookAt(3.5, 0, 0);
@@ -567,10 +718,20 @@ function blastocyst(subDay: number): DaySceneBuild {
   for (let i = 0; i < 6; i++) {
     const f = new THREE.Mesh(
       new THREE.PlaneGeometry(0.15, 0.08),
-      mat({ color: 0xf7c8dc, transparent: true, opacity: subDay > 0.34 ? 0.5 : 0, side: THREE.DoubleSide }),
+      mat({
+        color: 0xf7c8dc,
+        transparent: true,
+        opacity: subDay > 0.34 ? 0.5 : 0,
+        side: THREE.DoubleSide,
+      }),
     );
-    f.position.set(2.6 + Math.random() * 0.6, (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 1.2);
-    g.add(f); frags.push(f);
+    f.position.set(
+      2.6 + Math.random() * 0.6,
+      (Math.random() - 0.5) * 1.2,
+      (Math.random() - 0.5) * 1.2,
+    );
+    g.add(f);
+    frags.push(f);
   }
 
   // Endometrium wall (day 7)
@@ -604,7 +765,10 @@ function blastocyst(subDay: number): DaySceneBuild {
     mkLabel("blastocoele", "Blastocoele", [-1.3, -0.3, 0.8], "Fluid-filled cavity."),
     mkLabel("icm", "Inner Cell Mass", [0.3, 1.9, 0], "Pluripotent stem cells → embryo proper."),
   );
-  if (subDay > 0.67) labels.push(mkLabel("endo", "Endometrium", [3.5, 1.5, 0], "Maternal uterine lining — adhesion begins."));
+  if (subDay > 0.67)
+    labels.push(
+      mkLabel("endo", "Endometrium", [3.5, 1.5, 0], "Maternal uterine lining — adhesion begins."),
+    );
 
   const update = (t: number) => {
     // Cavity pulse
@@ -620,7 +784,8 @@ function blastocyst(subDay: number): DaySceneBuild {
     fgf.forEach((a, i) => a.scale.setScalar(0.4 + Math.abs(Math.sin(t + i * 0.7)) * 0.8));
     // Hatching crack shimmer
     if (subDay > 0.34) {
-      (crack.material as THREE.MeshPhysicalMaterial).opacity = 0.4 + Math.abs(Math.sin(t * 3)) * 0.5;
+      (crack.material as THREE.MeshPhysicalMaterial).opacity =
+        0.4 + Math.abs(Math.sin(t * 3)) * 0.5;
       crack.scale.setScalar(1 + Math.sin(t * 2) * 0.15);
     }
     // Zona fragments drift
@@ -637,7 +802,7 @@ function blastocyst(subDay: number): DaySceneBuild {
     // hCG rise
     hcg.points.forEach((p, i) => {
       const s = hcg.seeds[i];
-      const ph = ((t * 0.3 + s.ph) % 1);
+      const ph = (t * 0.3 + s.ph) % 1;
       p.position.y = -2 + ph * 4;
       (p.material as THREE.MeshPhysicalMaterial).opacity = subDay > 0.67 ? (1 - ph) * 0.7 : 0;
     });
@@ -664,7 +829,8 @@ function implantationScene(subDay: number): DaySceneBuild {
     mat({ color: 0x992244, roughness: 0.85, transparent: true, opacity: 0.55 }),
   );
   endo.position.z = -0.8;
-  g.add(endo); outer.push(endo);
+  g.add(endo);
+  outer.push(endo);
 
   // Syncytiotrophoblast fingers extending outward (grow with subDay)
   const syncytioG = new THREE.Group();
@@ -704,7 +870,14 @@ function implantationScene(subDay: number): DaySceneBuild {
   const amnR = 0.9 + subDay * 0.5;
   const amnion = new THREE.Mesh(
     new THREE.SphereGeometry(amnR, 40, 32, 0, Math.PI * 2, 0, Math.PI / 2),
-    mat({ color: 0xbfeaff, transmission: 0.9, transparent: true, opacity: 0.4, roughness: 0.1, side: THREE.DoubleSide }),
+    mat({
+      color: 0xbfeaff,
+      transmission: 0.9,
+      transparent: true,
+      opacity: 0.4,
+      roughness: 0.1,
+      side: THREE.DoubleSide,
+    }),
   );
   amnion.position.y = 0.05;
   g.add(amnion);
@@ -714,7 +887,14 @@ function implantationScene(subDay: number): DaySceneBuild {
   const yolkR = 0.95 + subDay * 0.5;
   const yolk = new THREE.Mesh(
     new THREE.SphereGeometry(yolkR, 40, 32, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
-    mat({ color: 0xffe08a, transmission: 0.85, transparent: true, opacity: 0.45, roughness: 0.15, side: THREE.DoubleSide }),
+    mat({
+      color: 0xffe08a,
+      transmission: 0.85,
+      transparent: true,
+      opacity: 0.45,
+      roughness: 0.15,
+      side: THREE.DoubleSide,
+    }),
   );
   yolk.position.y = -0.05;
   g.add(yolk);
@@ -727,19 +907,31 @@ function implantationScene(subDay: number): DaySceneBuild {
     for (let i = 0; i < nL; i++) {
       const l = new THREE.Mesh(
         new THREE.SphereGeometry(0.13 + Math.random() * 0.1, 16, 16),
-        mat({ color: 0xcc2233, emissive: 0x661122, emissiveIntensity: 0.7, transparent: true, opacity: 0.85 }),
+        mat({
+          color: 0xcc2233,
+          emissive: 0x661122,
+          emissiveIntensity: 0.7,
+          transparent: true,
+          opacity: 0.85,
+        }),
       );
       const th = Math.random() * Math.PI * 2;
       const r = 1.4 + Math.random() * 0.5;
       l.position.set(Math.cos(th) * r, Math.sin(th) * r * 0.6, -0.5 - Math.random() * 0.5);
-      g.add(l); lacunae.push(l);
+      g.add(l);
+      lacunae.push(l);
     }
   }
 
   // Heuser's membrane sweep (day 9)
   const heuser = new THREE.Mesh(
     new THREE.SphereGeometry(0.85, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
-    mat({ color: 0xffddbb, transparent: true, opacity: subDay > 0.16 ? 0.4 : 0, side: THREE.DoubleSide }),
+    mat({
+      color: 0xffddbb,
+      transparent: true,
+      opacity: subDay > 0.16 ? 0.4 : 0,
+      side: THREE.DoubleSide,
+    }),
   );
   heuser.position.y = -0.15;
   g.add(heuser);
@@ -764,7 +956,8 @@ function implantationScene(subDay: number): DaySceneBuild {
       const th = -Math.PI / 2 + (i - 2) * 0.35;
       v.position.set(Math.cos(th) * 1.6, Math.sin(th) * 1.2, -1.2);
       v.rotation.z = th + Math.PI / 2;
-      g.add(v); villi.push(v);
+      g.add(v);
+      villi.push(v);
     }
   }
 
@@ -791,10 +984,26 @@ function implantationScene(subDay: number): DaySceneBuild {
     mkLabel("hypo", "Hypoblast", [1.4, -0.4, 0], "Lower layer — extraembryonic endoderm."),
     mkLabel("amn", "Amniotic Cavity", [0, 1.4, 0], "Fluid space above the disc."),
     mkLabel("yolk", "Yolk Sac", [0, -1.4, 0], "Below the disc — early nutrition, first blood."),
-    mkLabel("syncytio", "Syncytiotrophoblast", [-1.6, 0.9, -0.5], "Invasive multinucleated placental layer."),
+    mkLabel(
+      "syncytio",
+      "Syncytiotrophoblast",
+      [-1.6, 0.9, -0.5],
+      "Invasive multinucleated placental layer.",
+    ),
   );
-  if (subDay > 0.16) labels.push(mkLabel("lac", "Lacunae", [1.7, 1, -0.5], "Blood-filled spaces — earliest uteroplacental circulation."));
-  if (subDay > 0.5) labels.push(mkLabel("stalk", "Connecting Stalk", [-1.5, 1.1, -0.5], "Precursor of the umbilical cord."));
+  if (subDay > 0.16)
+    labels.push(
+      mkLabel(
+        "lac",
+        "Lacunae",
+        [1.7, 1, -0.5],
+        "Blood-filled spaces — earliest uteroplacental circulation.",
+      ),
+    );
+  if (subDay > 0.5)
+    labels.push(
+      mkLabel("stalk", "Connecting Stalk", [-1.5, 1.1, -0.5], "Precursor of the umbilical cord."),
+    );
 
   const update = (t: number) => {
     // Syncytio fingers wiggle (invasion)
@@ -805,7 +1014,8 @@ function implantationScene(subDay: number): DaySceneBuild {
     lacunae.forEach((l, i) => {
       const s = 1 + Math.sin(t * 1.2 + i * 0.4) * 0.15;
       l.scale.setScalar(s);
-      (l.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.4 + Math.abs(Math.sin(t + i)) * 0.5;
+      (l.material as THREE.MeshPhysicalMaterial).emissiveIntensity =
+        0.4 + Math.abs(Math.sin(t + i)) * 0.5;
     });
     // Amnion + yolk breathe
     amnion.scale.setScalar(1 + Math.sin(t * 0.5) * 0.03);
@@ -816,7 +1026,7 @@ function implantationScene(subDay: number): DaySceneBuild {
     // Heuser sweep
     heuser.rotation.y = t * 0.2;
     // Villi wiggle
-    villi.forEach((v, i) => v.rotation.z += 0);
+    villi.forEach((v, i) => (v.rotation.z += 0));
     // Decidualization dots pulse
     dec.points.forEach((p, i) => {
       p.scale.setScalar(0.6 + Math.abs(Math.sin(t + i * 0.3)) * 0.5);
@@ -848,7 +1058,8 @@ function gastrulationScene(subDay: number): DaySceneBuild {
     mat({ color: 0x4aa8ff, emissive: 0x1a4a99, emissiveIntensity: 0.25 }),
   );
   ecto.position.y = 0.42;
-  g.add(ecto); outer.push(ecto);
+  g.add(ecto);
+  outer.push(ecto);
   explodable.push({ mesh: ecto, dir: new THREE.Vector3(0, 1, 0), base: ecto.position.clone() });
 
   // Primitive streak groove (grows with subDay)
@@ -872,7 +1083,13 @@ function gastrulationScene(subDay: number): DaySceneBuild {
   const mesoW = 2 + subDay * 1.4;
   const meso = new THREE.Mesh(
     new THREE.BoxGeometry(mesoW, 0.16, 1.6 + subDay * 0.6),
-    mat({ color: 0xff5599, emissive: 0x881144, emissiveIntensity: 0.35, transparent: true, opacity: 0.4 + subDay * 0.5 }),
+    mat({
+      color: 0xff5599,
+      emissive: 0x881144,
+      emissiveIntensity: 0.35,
+      transparent: true,
+      opacity: 0.4 + subDay * 0.5,
+    }),
   );
   meso.position.y = 0.2;
   g.add(meso);
@@ -881,7 +1098,13 @@ function gastrulationScene(subDay: number): DaySceneBuild {
   // Endoderm sheet
   const endo = new THREE.Mesh(
     new THREE.BoxGeometry(3.2, 0.16, 2.2),
-    mat({ color: 0xffd166, emissive: 0x996611, emissiveIntensity: 0.25, transparent: true, opacity: 0.5 + subDay * 0.5 }),
+    mat({
+      color: 0xffd166,
+      emissive: 0x996611,
+      emissiveIntensity: 0.25,
+      transparent: true,
+      opacity: 0.5 + subDay * 0.5,
+    }),
   );
   endo.position.y = -0.02;
   g.add(endo);
@@ -901,7 +1124,7 @@ function gastrulationScene(subDay: number): DaySceneBuild {
   const migrate = makeParticles(30, 0xff88cc, 0.06);
   migrate.points.forEach((p, i) => {
     const s = migrate.seeds[i];
-    p.position.set(-0.4 + (s.x) * streakLen * 0.5, 0.5, 0);
+    p.position.set(-0.4 + s.x * streakLen * 0.5, 0.5, 0);
     g.add(p);
   });
 
@@ -914,7 +1137,8 @@ function gastrulationScene(subDay: number): DaySceneBuild {
         mat({ color: 0xff77aa, emissive: 0x881155, emissiveIntensity: 0.3 }),
       );
       w.position.set(-0.4, 0.2, side * 0.85);
-      g.add(w); wings.push(w);
+      g.add(w);
+      wings.push(w);
     }
   }
 
@@ -950,7 +1174,12 @@ function gastrulationScene(subDay: number): DaySceneBuild {
     mkLabel("meso", "Mesoderm", [1.9, 0.25, 0], "New middle layer — muscles, bones, blood."),
     mkLabel("endo", "Endoderm", [1.9, -0.05, 0], "Gut lining, lungs, liver."),
     mkLabel("streak", "Primitive Streak", [0.3, 0.72, 0], "Ingression groove."),
-    mkLabel("node", "Primitive Node", [node.position.x - 0.3, 0.85, 0], "Rostral organizer — cilia set left-right asymmetry."),
+    mkLabel(
+      "node",
+      "Primitive Node",
+      [node.position.x - 0.3, 0.85, 0],
+      "Rostral organizer — cilia set left-right asymmetry.",
+    ),
     mkLabel("noto", "Notochord", [noto.position.x, 0.55, 0], "Axial rod inducing neural tube."),
   );
 
@@ -958,23 +1187,25 @@ function gastrulationScene(subDay: number): DaySceneBuild {
     // Migrating cells cycle into streak
     migrate.points.forEach((p, i) => {
       const s = migrate.seeds[i];
-      const phase = ((t * 0.4 + s.ph / 6) % 1);
+      const phase = (t * 0.4 + s.ph / 6) % 1;
       p.position.x = -0.4 + s.x * streakLen * 0.5;
       p.position.y = 0.5 - phase * 0.6;
       p.position.z = s.z * 0.9;
-      (p.material as THREE.MeshPhysicalMaterial).opacity = phase < 0.9 ? (1 - phase) : 0;
+      (p.material as THREE.MeshPhysicalMaterial).opacity = phase < 0.9 ? 1 - phase : 0;
     });
     // Node cilia rotate
     cilia.rotation.z = t * 3;
     // Nodal gradient pulse
-    (gradient.material as THREE.MeshBasicMaterial).opacity = 0.08 + Math.abs(Math.sin(t * 0.8)) * 0.15;
+    (gradient.material as THREE.MeshBasicMaterial).opacity =
+      0.08 + Math.abs(Math.sin(t * 0.8)) * 0.15;
     gradient.rotation.z = t * 0.1;
     // Meso spread pulse
     meso.scale.x = 1 + Math.sin(t * 0.6) * 0.02;
     // Noto glow
-    (noto.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.5 + Math.abs(Math.sin(t)) * 0.4;
+    (noto.material as THREE.MeshPhysicalMaterial).emissiveIntensity =
+      0.5 + Math.abs(Math.sin(t)) * 0.4;
     // Wings pulse
-    wings.forEach((w, i) => w.scale.z = 1 + Math.sin(t * 0.8 + i) * 0.1);
+    wings.forEach((w, i) => (w.scale.z = 1 + Math.sin(t * 0.8 + i) * 0.1));
     // Streak pulse
     (streak.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0;
     // Node pulse
@@ -982,7 +1213,8 @@ function gastrulationScene(subDay: number): DaySceneBuild {
     // Prechordal wobble
     pc.position.y = 0.32 + Math.sin(t * 1.5) * 0.03;
     // Ectoderm glow
-    (ecto.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.2 + Math.abs(Math.sin(t * 0.8)) * 0.15;
+    (ecto.material as THREE.MeshPhysicalMaterial).emissiveIntensity =
+      0.2 + Math.abs(Math.sin(t * 0.8)) * 0.15;
   };
   return { group: g, labels, outerMeshes: outer, explodable, update };
 }
@@ -1002,7 +1234,13 @@ function neurulationScene(subDay: number): DaySceneBuild {
   const foldAmt = subDay;
   const tubeGroup = new THREE.Group();
 
-  const plateMat = mat({ color: 0x88ccff, emissive: 0x224488, emissiveIntensity: 0.35, roughness: 0.3, side: THREE.DoubleSide });
+  const plateMat = mat({
+    color: 0x88ccff,
+    emissive: 0x224488,
+    emissiveIntensity: 0.35,
+    roughness: 0.3,
+    side: THREE.DoubleSide,
+  });
   const segs: THREE.Mesh[] = [];
   for (let i = 0; i < segments; i++) {
     const seg = new THREE.Mesh(
@@ -1034,13 +1272,19 @@ function neurulationScene(subDay: number): DaySceneBuild {
 
   // Somites (pairs) — number depends on subDay
   const somCount = Math.floor(3 + subDay * 12);
-  const somMat = mat({ color: 0xff77aa, emissive: 0x881144, emissiveIntensity: 0.35, roughness: 0.35 });
+  const somMat = mat({
+    color: 0xff77aa,
+    emissive: 0x881144,
+    emissiveIntensity: 0.35,
+    roughness: 0.35,
+  });
   const somites: THREE.Mesh[] = [];
   for (let i = 0; i < somCount; i++) {
     for (const side of [-1, 1]) {
       const s = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, 0.28), somMat);
       s.position.set((i - somCount / 2 + 0.5) * 0.32, 0, side * 0.55);
-      g.add(s); somites.push(s);
+      g.add(s);
+      somites.push(s);
       explodable.push({ mesh: s, dir: new THREE.Vector3(0, 0, side), base: s.position.clone() });
     }
   }
@@ -1056,7 +1300,13 @@ function neurulationScene(subDay: number): DaySceneBuild {
   // Heart tube (day 21+) — a small pulsing pink C
   const heart = new THREE.Mesh(
     new THREE.TorusGeometry(0.3, 0.11, 12, 24, Math.PI * 1.3),
-    mat({ color: 0xff2244, emissive: 0xff2244, emissiveIntensity: 0.9, transparent: true, opacity: subDay > 0.4 ? 0.95 : 0 }),
+    mat({
+      color: 0xff2244,
+      emissive: 0xff2244,
+      emissiveIntensity: 0.9,
+      transparent: true,
+      opacity: subDay > 0.4 ? 0.95 : 0,
+    }),
   );
   heart.position.set(-1.5, -0.7, 0.8);
   heart.rotation.y = Math.PI / 2;
@@ -1074,7 +1324,8 @@ function neurulationScene(subDay: number): DaySceneBuild {
       );
       a.rotation.z = Math.PI / 2;
       a.position.set(0, -0.35, side * 0.25);
-      g.add(a); aorta.push(a);
+      g.add(a);
+      aorta.push(a);
     }
   }
 
@@ -1091,13 +1342,25 @@ function neurulationScene(subDay: number): DaySceneBuild {
   // ANP / PNP glow at open neuropores (rostral/caudal)
   const anp = new THREE.Mesh(
     new THREE.SphereGeometry(0.18, 12, 12),
-    mat({ color: 0xffffff, emissive: 0xffff88, emissiveIntensity: 1, transparent: true, opacity: subDay < 0.9 ? 0.9 : 0 }),
+    mat({
+      color: 0xffffff,
+      emissive: 0xffff88,
+      emissiveIntensity: 1,
+      transparent: true,
+      opacity: subDay < 0.9 ? 0.9 : 0,
+    }),
   );
   anp.position.set(-1.7, 0, 0);
   g.add(anp);
   const pnp = new THREE.Mesh(
     new THREE.SphereGeometry(0.14, 12, 12),
-    mat({ color: 0xffffff, emissive: 0xff88ff, emissiveIntensity: 1, transparent: true, opacity: subDay < 1 ? 0.9 : 0 }),
+    mat({
+      color: 0xffffff,
+      emissive: 0xff88ff,
+      emissiveIntensity: 1,
+      transparent: true,
+      opacity: subDay < 1 ? 0.9 : 0,
+    }),
   );
   pnp.position.set(1.7, 0, 0);
   g.add(pnp);
@@ -1108,14 +1371,32 @@ function neurulationScene(subDay: number): DaySceneBuild {
   g.add(shh);
 
   labels.push(
-    mkLabel("tube", "Neural Tube", [0, 0.6, 0], "Folding neural plate — closes rostrally to caudally."),
+    mkLabel(
+      "tube",
+      "Neural Tube",
+      [0, 0.6, 0],
+      "Folding neural plate — closes rostrally to caudally.",
+    ),
     mkLabel("noto", "Notochord", [1.6, -0.6, 0], "Signaling rod (SHH) below the tube."),
-    mkLabel("som", "Somites (pairs)", [0, 0, 1], "Paraxial mesoderm blocks — future vertebrae & muscles."),
-    mkLabel("crest", "Neural Crest", [0, 0.7, 0.5], "Cells peeling from tube crest — will populate face, PNS, melanocytes."),
+    mkLabel(
+      "som",
+      "Somites (pairs)",
+      [0, 0, 1],
+      "Paraxial mesoderm blocks — future vertebrae & muscles.",
+    ),
+    mkLabel(
+      "crest",
+      "Neural Crest",
+      [0, 0.7, 0.5],
+      "Cells peeling from tube crest — will populate face, PNS, melanocytes.",
+    ),
     mkLabel("anp", "Anterior Neuropore", [-1.9, 0.2, 0], "Rostral opening — closes around day 25."),
     mkLabel("pnp", "Posterior Neuropore", [1.9, 0.2, 0], "Caudal opening — closes around day 27."),
   );
-  if (subDay > 0.4) labels.push(mkLabel("heart", "Heart Tube", [-1.5, -0.4, 1.2], "Newly fused tube — first beats."));
+  if (subDay > 0.4)
+    labels.push(
+      mkLabel("heart", "Heart Tube", [-1.5, -0.4, 1.2], "Newly fused tube — first beats."),
+    );
 
   const update = (t: number) => {
     // Segments: gentle wiggle simulating fold consolidation
@@ -1123,7 +1404,8 @@ function neurulationScene(subDay: number): DaySceneBuild {
       s.rotation.z = Math.PI / 2 + Math.sin(t * 0.5 + i * 0.3) * 0.02;
     });
     // Notochord glow
-    (noto.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.4 + Math.abs(Math.sin(t)) * 0.5;
+    (noto.material as THREE.MeshPhysicalMaterial).emissiveIntensity =
+      0.4 + Math.abs(Math.sin(t)) * 0.5;
     // Somites pulse & sequentially glow rostro-caudal
     somites.forEach((s, i) => {
       const idx = Math.floor(i / 2);
@@ -1133,7 +1415,7 @@ function neurulationScene(subDay: number): DaySceneBuild {
     // Neural crest particles drift outward
     crest.points.forEach((p, i) => {
       const s = crest.seeds[i];
-      const phase = ((t * 0.4 + s.ph) % 1);
+      const phase = (t * 0.4 + s.ph) % 1;
       p.position.y = 0.3 + phase * 0.5;
       p.position.z = s.z * 0.3 + Math.sign(s.z) * phase * 0.9;
       (p.material as THREE.MeshPhysicalMaterial).opacity = 1 - phase;
@@ -1147,14 +1429,16 @@ function neurulationScene(subDay: number): DaySceneBuild {
     // Blood particles flow along aorta
     blood.points.forEach((p, i) => {
       const s = blood.seeds[i];
-      const ph = ((t * 0.6 + s.ph) % 1);
+      const ph = (t * 0.6 + s.ph) % 1;
       p.position.x = -1.5 + ph * 3;
       p.position.y = -0.35;
       p.position.z = s.z * 0.25;
     });
     // Neuropore glow flicker
-    (anp.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.8 + Math.abs(Math.sin(t * 3)) * 0.6;
-    (pnp.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.8 + Math.abs(Math.sin(t * 3 + 1)) * 0.6;
+    (anp.material as THREE.MeshPhysicalMaterial).emissiveIntensity =
+      0.8 + Math.abs(Math.sin(t * 3)) * 0.6;
+    (pnp.material as THREE.MeshPhysicalMaterial).emissiveIntensity =
+      0.8 + Math.abs(Math.sin(t * 3 + 1)) * 0.6;
     // SHH pulse
     shh.intensity = 0.5 + Math.abs(Math.sin(t * 1.5)) * 0.8;
   };
@@ -1182,9 +1466,16 @@ function organogenesisScene(subDay: number): DaySceneBuild {
   );
   const body = new THREE.Mesh(
     new THREE.TubeGeometry(curve, 80, 0.42, 24, false),
-    mat({ color: 0xffcbb0, emissive: 0x552211, emissiveIntensity: 0.2, roughness: 0.45, clearcoat: 0.5 }),
+    mat({
+      color: 0xffcbb0,
+      emissive: 0x552211,
+      emissiveIntensity: 0.2,
+      roughness: 0.45,
+      clearcoat: 0.5,
+    }),
   );
-  g.add(body); outer.push(body);
+  g.add(body);
+  outer.push(body);
 
   // Brain vesicles: 3 (day 24-26) → 5 (day 28)
   const headPos = curve.getPoint(0);
@@ -1195,8 +1486,13 @@ function organogenesisScene(subDay: number): DaySceneBuild {
     const b = new THREE.Mesh(new THREE.SphereGeometry(0.44 - i * 0.03, 24, 24), brainMat);
     const spread = i / Math.max(1, nBrains - 1);
     b.position.copy(headPos).add(new THREE.Vector3(-0.35 + spread * 0.9, 0.4 - spread * 0.15, 0));
-    g.add(b); brains.push(b);
-    explodable.push({ mesh: b, dir: new THREE.Vector3(spread - 0.5, 1, 0).normalize(), base: b.position.clone() });
+    g.add(b);
+    brains.push(b);
+    explodable.push({
+      mesh: b,
+      dir: new THREE.Vector3(spread - 0.5, 1, 0).normalize(),
+      base: b.position.clone(),
+    });
   }
 
   // Pharyngeal arches: 2 (day 24) → 4 (day 27+)
@@ -1209,13 +1505,20 @@ function organogenesisScene(subDay: number): DaySceneBuild {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.08, 12, 24), neckMat);
     ring.position.copy(p);
     ring.rotation.y = Math.PI / 2;
-    g.add(ring); arches.push(ring);
+    g.add(ring);
+    arches.push(ring);
   }
 
   // Optic vesicle (day 25+)
   const optic = new THREE.Mesh(
     new THREE.SphereGeometry(0.14, 16, 16),
-    mat({ color: 0x334455, emissive: 0x2244aa, emissiveIntensity: 0.8, transparent: true, opacity: subDay > 0.2 ? 1 : 0 }),
+    mat({
+      color: 0x334455,
+      emissive: 0x2244aa,
+      emissiveIntensity: 0.8,
+      transparent: true,
+      opacity: subDay > 0.2 ? 1 : 0,
+    }),
   );
   optic.position.copy(headPos).add(new THREE.Vector3(-0.55, 0.15, 0.3));
   g.add(optic);
@@ -1223,20 +1526,35 @@ function organogenesisScene(subDay: number): DaySceneBuild {
   // Otic pit/vesicle
   const otic = new THREE.Mesh(
     new THREE.SphereGeometry(0.12, 16, 16),
-    mat({ color: 0xffeecc, emissive: 0x887744, emissiveIntensity: 0.6, transparent: true, opacity: subDay > 0.2 ? 1 : 0 }),
+    mat({
+      color: 0xffeecc,
+      emissive: 0x887744,
+      emissiveIntensity: 0.6,
+      transparent: true,
+      opacity: subDay > 0.2 ? 1 : 0,
+    }),
   );
   otic.position.copy(headPos).add(new THREE.Vector3(-0.1, 0.15, 0.35));
   g.add(otic);
 
   // Heart bulge — S-loop → D-loop
-  const heartMat = mat({ color: 0xff2244, emissive: 0xff2244, emissiveIntensity: 0.9, roughness: 0.3 });
+  const heartMat = mat({
+    color: 0xff2244,
+    emissive: 0xff2244,
+    emissiveIntensity: 0.9,
+    roughness: 0.3,
+  });
   const heart = new THREE.Mesh(new THREE.SphereGeometry(0.36 + subDay * 0.06, 32, 32), heartMat);
   const heartPos = curve.getPoint(0.28);
   heart.position.copy(heartPos).add(new THREE.Vector3(0.1, -0.2, 0.35));
   g.add(heart);
   const heartLight = new THREE.PointLight(0xff3355, 2.5, 4);
   heart.add(heartLight);
-  explodable.push({ mesh: heart, dir: new THREE.Vector3(1, -0.2, 1).normalize(), base: heart.position.clone() });
+  explodable.push({
+    mesh: heart,
+    dir: new THREE.Vector3(1, -0.2, 1).normalize(),
+    base: heart.position.clone(),
+  });
 
   // Limb buds — upper first, lower later
   const limbMat = mat({ color: 0xffb090, roughness: 0.5 });
@@ -1248,7 +1566,8 @@ function organogenesisScene(subDay: number): DaySceneBuild {
     bud1.position.copy(p).add(new THREE.Vector3(0.2, 0, 0.45));
     const bud2 = new THREE.Mesh(new THREE.SphereGeometry(0.18 + subDay * 0.1, 16, 16), limbMat);
     bud2.position.copy(p).add(new THREE.Vector3(0.2, 0, -0.45));
-    g.add(bud1, bud2); limbs.push(bud1, bud2);
+    g.add(bud1, bud2);
+    limbs.push(bud1, bud2);
   }
 
   // Tail
@@ -1274,7 +1593,8 @@ function organogenesisScene(subDay: number): DaySceneBuild {
     const normal = new THREE.Vector3(-tangent.y, tangent.x, 0).normalize();
     const s = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.14), somMat);
     s.position.copy(p).add(normal.multiplyScalar(0.4));
-    g.add(s); somites.push(s);
+    g.add(s);
+    somites.push(s);
   }
 
   // Blood flow particles along body curve
@@ -1282,14 +1602,56 @@ function organogenesisScene(subDay: number): DaySceneBuild {
   blood.points.forEach((p) => g.add(p));
 
   labels.push(
-    mkLabel("brain", "Brain Vesicles", [brains[Math.floor(nBrains / 2)].position.x + 0.2, brains[Math.floor(nBrains / 2)].position.y + 0.6, 0], `${nBrains === 5 ? "Five" : "Three"} primary vesicles of the neural tube.`),
-    mkLabel("heart", "Beating Heart", [heart.position.x + 0.6, heart.position.y, 0.4], "Looping heart — ~160 BPM."),
-    mkLabel("arches", "Pharyngeal Arches", [-1.1, 1.4, 0], `${nArches} arches — face, jaw, throat structures.`),
-    mkLabel("optic", "Optic Vesicle", [optic.position.x - 0.4, optic.position.y + 0.3, 0], "Lateral outgrowth of forebrain — future eye."),
-    mkLabel("otic", "Otic Pit", [otic.position.x + 0.4, otic.position.y + 0.3, 0], "Ectodermal pit — future inner ear."),
-    mkLabel("tail", "Embryonic Tail", [tailPos.x - 0.5, tailPos.y - 0.5, 0], "Transient — will regress."),
+    mkLabel(
+      "brain",
+      "Brain Vesicles",
+      [
+        brains[Math.floor(nBrains / 2)].position.x + 0.2,
+        brains[Math.floor(nBrains / 2)].position.y + 0.6,
+        0,
+      ],
+      `${nBrains === 5 ? "Five" : "Three"} primary vesicles of the neural tube.`,
+    ),
+    mkLabel(
+      "heart",
+      "Beating Heart",
+      [heart.position.x + 0.6, heart.position.y, 0.4],
+      "Looping heart — ~160 BPM.",
+    ),
+    mkLabel(
+      "arches",
+      "Pharyngeal Arches",
+      [-1.1, 1.4, 0],
+      `${nArches} arches — face, jaw, throat structures.`,
+    ),
+    mkLabel(
+      "optic",
+      "Optic Vesicle",
+      [optic.position.x - 0.4, optic.position.y + 0.3, 0],
+      "Lateral outgrowth of forebrain — future eye.",
+    ),
+    mkLabel(
+      "otic",
+      "Otic Pit",
+      [otic.position.x + 0.4, otic.position.y + 0.3, 0],
+      "Ectodermal pit — future inner ear.",
+    ),
+    mkLabel(
+      "tail",
+      "Embryonic Tail",
+      [tailPos.x - 0.5, tailPos.y - 0.5, 0],
+      "Transient — will regress.",
+    ),
   );
-  if (limbs.length > 0) labels.push(mkLabel("limbs", "Limb Buds", [1.6, -1.2, 0.5], "Mesenchymal outgrowths — future arms and legs."));
+  if (limbs.length > 0)
+    labels.push(
+      mkLabel(
+        "limbs",
+        "Limb Buds",
+        [1.6, -1.2, 0.5],
+        "Mesenchymal outgrowths — future arms and legs.",
+      ),
+    );
 
   const bpm = 160 + subDay * 20;
   const update = (t: number) => {
@@ -1301,7 +1663,7 @@ function organogenesisScene(subDay: number): DaySceneBuild {
     // Brain vesicles inflate/pulse
     brains.forEach((b, i) => b.scale.setScalar(1 + Math.sin(t * 1 + i * 0.5) * 0.05));
     // Arches subtle wiggle
-    arches.forEach((a, i) => a.rotation.z = Math.sin(t * 0.5 + i) * 0.05);
+    arches.forEach((a, i) => (a.rotation.z = Math.sin(t * 0.5 + i) * 0.05));
     // Optic + otic pulse
     optic.scale.setScalar(1 + Math.sin(t * 1.5) * 0.1);
     otic.scale.setScalar(1 + Math.sin(t * 1.5 + 1) * 0.1);
@@ -1317,7 +1679,7 @@ function organogenesisScene(subDay: number): DaySceneBuild {
     // Blood particles flow along curve
     blood.points.forEach((p, i) => {
       const s = blood.seeds[i];
-      const ph = ((t * 0.35 + s.ph) % 1);
+      const ph = (t * 0.35 + s.ph) % 1;
       const pos = curve.getPoint(ph);
       p.position.copy(pos);
       (p.material as THREE.MeshPhysicalMaterial).opacity = 1;
