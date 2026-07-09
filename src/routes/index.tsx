@@ -70,6 +70,58 @@ function Index() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const positionLabels = (labels: ProjectedLabel[]) => {
+    const positioned = [...labels];
+    const labelSize = { w: 140, h: 28 };
+    const padding = 12;
+    const minDist = 70;
+
+    for (let i = 0; i < positioned.length; i++) {
+      let adjusted = false;
+      let attempts = 0;
+      const maxAttempts = 8;
+
+      while (attempts < maxAttempts) {
+        let x = positioned[i].screen.x;
+        let y = positioned[i].screen.y;
+
+        // Clamp to viewport with padding
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        x = Math.max(padding + labelSize.w / 2, Math.min(w - padding - labelSize.w / 2, x));
+        y = Math.max(padding + labelSize.h / 2, Math.min(h - padding - labelSize.h / 2, y));
+
+        // Check collision with previous labels
+        let collided = false;
+        for (let j = 0; j < i; j++) {
+          const other = positioned[j].screen;
+          const dx = x - other.x;
+          const dy = y - other.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < minDist) {
+            collided = true;
+            const angle = Math.atan2(dy, dx);
+            x = other.x + Math.cos(angle) * minDist;
+            y = other.y + Math.sin(angle) * minDist;
+            break;
+          }
+        }
+
+        if (!collided) {
+          positioned[i].screen.x = x;
+          positioned[i].screen.y = y;
+          adjusted = true;
+          break;
+        }
+        attempts++;
+      }
+    }
+
+    return positioned;
+  };
+
+  const adjustedLabels = useMemo(() => positionLabels(labels), [labels]);
+
   return (
     <main className="relative h-screen w-screen overflow-hidden">
       <EmbryoScene
@@ -84,18 +136,19 @@ function Index() {
 
       {/* Label overlays */}
       <div className="pointer-events-none absolute inset-0">
-        {labels.map((lb) =>
+        {adjustedLabels.map((lb) =>
           lb.screen.visible ? (
             <button
               key={lb.key}
               onClick={() => setSelected(lb.key === selected ? null : lb.key)}
-              className={`pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2.5 py-1 text-[11px] font-medium mono transition
+              className={`label-button pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2.5 py-1 text-[11px] font-medium mono transition
                 ${selected === lb.key
                   ? "border-primary bg-primary text-primary-foreground shadow-[0_0_20px_rgb(255_100_170/0.5)]"
                   : "border-white/25 bg-black/45 text-white/90 backdrop-blur-md hover:border-primary/70"}`}
-              style={{ left: lb.screen.x, top: lb.screen.y }}
+              style={{ left: `${lb.screen.x}px`, top: `${lb.screen.y}px` }}
+              title={lb.text}
             >
-              <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="label-dot mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" />
               {lb.text}
             </button>
           ) : null,
@@ -103,34 +156,34 @@ function Index() {
       </div>
 
       {/* Header */}
-      <header className="pointer-events-none absolute top-0 left-0 right-0 z-10 p-3 md:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="pointer-events-auto glass rounded-2xl px-3.5 py-2.5">
+      <header className="pointer-events-none absolute top-0 left-0 right-0 z-10 p-2 sm:p-3 md:p-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-2 sm:gap-3">
+          <div className="pointer-events-auto glass rounded-2xl px-3 sm:px-3.5 py-2 sm:py-2.5 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="inline-block h-2 w-2 rounded-full bg-primary heart-dot" />
-              <h1 className="text-sm md:text-base font-semibold tracking-tight">Embryo Atlas</h1>
-              <span className="mono text-[10px] text-muted-foreground hidden sm:inline">day-by-day · week 1–4</span>
+              <span className="inline-block h-2 w-2 rounded-full bg-primary heart-dot flex-shrink-0" />
+              <h1 className="text-xs sm:text-sm md:text-base font-semibold tracking-tight truncate">Embryo Atlas</h1>
+              <span className="mono text-[9px] text-muted-foreground hidden md:inline whitespace-nowrap">day-by-day · week 1–4</span>
             </div>
-            <p className="mt-0.5 text-[11px] text-muted-foreground max-w-[260px] hidden sm:block">
+            <p className="mt-0.5 text-[10px] sm:text-[11px] text-muted-foreground max-w-[260px] hidden sm:block">
               Drag orbit · scroll zoom · tap labels · slice & explore
             </p>
           </div>
 
-          <div className="pointer-events-auto glass rounded-2xl px-3.5 py-2.5 min-w-[160px] md:min-w-[220px]">
-            <div className="mono text-[9px] md:text-[10px] uppercase tracking-widest text-muted-foreground">
-              Day {day.day} · Week {day.week}
+          <div className="pointer-events-auto glass rounded-2xl px-3 sm:px-3.5 py-2 sm:py-2.5 min-w-[140px] sm:min-w-[160px] md:min-w-[220px] flex-shrink-0">
+            <div className="mono text-[8px] sm:text-[9px] md:text-[10px] uppercase tracking-widest text-muted-foreground">
+              D{day.day} · W{day.week}
             </div>
-            <div className="mt-0.5 text-sm md:text-base font-semibold leading-tight">{day.title}</div>
-            <dl className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] md:text-[11px]">
-              <dt className="text-muted-foreground">Size</dt><dd className="mono">{day.size}</dd>
-              <dt className="text-muted-foreground">Cells</dt><dd className="mono truncate">{day.cellCount}</dd>
+            <div className="mt-0.5 text-xs sm:text-sm md:text-base font-semibold leading-tight truncate">{day.title}</div>
+            <dl className="mt-1 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] md:text-[11px]">
+              <dt className="text-muted-foreground">Size</dt><dd className="mono truncate">{day.size}</dd>
+              <dt className="text-muted-foreground">Cells</dt><dd className="mono truncate text-[8px]">{day.cellCount}</dd>
             </dl>
           </div>
         </div>
       </header>
 
-      {/* Left controls */}
-      <aside className="absolute left-2 md:left-4 top-28 md:top-32 z-10 w-[168px] md:w-[212px]">
+      {/* Left controls - Hidden on mobile, visible on tablet+ */}
+      <aside className="hidden sm:block absolute left-2 md:left-4 top-28 md:top-32 z-10 w-[168px] md:w-[212px]">
         <div className="glass rounded-2xl p-2.5 md:p-3 space-y-3">
           <ControlBlock title="View">
             <ToggleRow label="X-Ray" active={xray} onClick={() => setXray(!xray)} />
@@ -152,7 +205,7 @@ function Index() {
                 <button
                   key={p}
                   onClick={() => setSlicePlane(slicePlane === p ? "off" : p)}
-                  className={`rounded-lg px-1 py-1.5 text-[10px] font-medium transition
+                  className={`view-plane-btn rounded-lg px-1 py-1.5 text-[10px] font-medium transition
                     ${slicePlane === p ? "bg-primary text-primary-foreground" : "bg-white/5 hover:bg-white/10"}`}
                 >
                   {p[0].toUpperCase() + p.slice(1, 3)}
@@ -174,32 +227,32 @@ function Index() {
         </div>
       </aside>
 
-      {/* Right detail panel */}
-      <div className="absolute right-2 md:right-4 top-28 md:top-32 z-10 w-[220px] md:w-[320px] max-h-[calc(100vh-260px)]">
+      {/* Right detail panel - Responsive sizing */}
+      <div className="absolute right-2 md:right-4 top-28 md:top-32 z-10 w-[min(90vw,220px)] sm:w-[220px] md:w-[320px] max-h-[calc(100vh-260px)]">
         <div className="glass rounded-2xl overflow-hidden flex flex-col max-h-[calc(100vh-260px)]">
           <button
-            className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/10 text-left hover:bg-white/5"
+            className="panel-header flex items-center justify-between px-3 sm:px-3.5 py-2 sm:py-2.5 border-b border-white/10 text-left hover:bg-white/5 transition gap-2"
             onClick={() => setPanelOpen(!panelOpen)}
           >
-            <div>
-              <div className="mono text-[10px] uppercase tracking-widest text-primary">
+            <div className="min-w-0 flex-1">
+              <div className="mono text-[8px] sm:text-[10px] uppercase tracking-widest text-primary">
                 {selectedLabel ? "Structure" : "What happens"}
               </div>
-              <div className="text-sm font-semibold leading-tight mt-0.5">
+              <div className="text-xs sm:text-sm font-semibold leading-tight mt-0.5 truncate">
                 {selectedLabel ? selectedLabel.text : day.headline}
               </div>
             </div>
-            <span className={`mono text-[10px] transition ${panelOpen ? "" : "rotate-180"}`}>▾</span>
+            <span className={`mono text-[10px] transition flex-shrink-0 ${panelOpen ? "" : "rotate-180"}`}>▾</span>
           </button>
 
           {panelOpen && (
             <div className="flex-1 overflow-y-auto">
               {selectedLabel ? (
-                <div className="p-3.5">
-                  <p className="text-[12px] leading-relaxed text-foreground/85">{selectedLabel.description}</p>
+                <div className="p-3 sm:p-3.5">
+                  <p className="text-[11px] sm:text-[12px] leading-relaxed text-foreground/85">{selectedLabel.description}</p>
                   <button
                     onClick={() => setSelected(null)}
-                    className="mt-3 text-[11px] text-primary hover:underline"
+                    className="mt-3 text-[10px] sm:text-[11px] text-primary hover:underline"
                   >
                     ← Back to Day {day.day}
                   </button>
@@ -213,14 +266,14 @@ function Index() {
                         <button
                           key={t}
                           onClick={() => setTab(t)}
-                          className={`shrink-0 px-2.5 py-2 text-[10px] mono uppercase tracking-wider transition
+                          className={`info-tab shrink-0 px-1.5 sm:px-2.5 py-2 text-[9px] sm:text-[10px] mono uppercase tracking-wider transition
                             ${tab === t ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}
                         >
                           {t === "em" ? "Epi↔Mes" : t === "structure" ? "Structure" : t === "signaling" ? "Signals" : t}
                         </button>
                       ))}
                   </div>
-                  <div className="p-3.5 text-[12px] leading-relaxed">
+                  <div className="p-3 sm:p-3.5 text-[11px] sm:text-[12px] leading-relaxed">
                     {tab === "overview" && (
                       <>
                         <p className="text-foreground/90">{day.whatHappens}</p>
@@ -315,16 +368,16 @@ function Index() {
       </div>
 
       {/* Bottom timeline + playback */}
-      <div className="absolute inset-x-0 bottom-0 z-10 p-2 md:p-4">
-        <div className="glass mx-auto max-w-4xl rounded-2xl p-2.5 md:p-3">
+      <div className="absolute inset-x-0 bottom-0 z-10 p-1.5 sm:p-2 md:p-4">
+        <div className="glass mx-auto max-w-full sm:max-w-4xl rounded-2xl p-2 sm:p-2.5 md:p-3">
           {/* Playback row */}
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 min-h-10">
             <button
               onClick={() => {
                 if (dayIdx >= DAYS.length - 1) setDayIdx(0);
                 setPlaying(!playing);
               }}
-              className="flex items-center justify-center h-9 w-9 md:h-10 md:w-10 rounded-full bg-primary text-primary-foreground shadow-[0_0_20px_rgb(255_100_170/0.4)] hover:scale-105 transition"
+              className="playback-btn flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 rounded-full bg-primary text-primary-foreground shadow-[0_0_20px_rgb(255_100_170/0.4)] hover:scale-105 transition flex-shrink-0"
               aria-label={playing ? "Pause" : "Play"}
             >
               {playing ? (
@@ -337,20 +390,20 @@ function Index() {
             <button
               onClick={() => setDayIdx(Math.max(0, dayIdx - 1))}
               disabled={dayIdx === 0}
-              className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 text-foreground/80 disabled:opacity-30 transition"
+              className="nav-btn rounded-lg px-1.5 sm:px-2 py-1.5 sm:py-2 bg-white/5 hover:bg-white/10 text-foreground/80 disabled:opacity-30 transition text-sm sm:text-base flex-shrink-0"
               aria-label="Previous day"
             >‹</button>
             <button
               onClick={() => setDayIdx(Math.min(DAYS.length - 1, dayIdx + 1))}
               disabled={dayIdx === DAYS.length - 1}
-              className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 text-foreground/80 disabled:opacity-30 transition"
+              className="nav-btn rounded-lg px-1.5 sm:px-2 py-1.5 sm:py-2 bg-white/5 hover:bg-white/10 text-foreground/80 disabled:opacity-30 transition text-sm sm:text-base flex-shrink-0"
               aria-label="Next day"
             >›</button>
 
             <div className="flex-1 min-w-0">
-              <div className="mono text-[10px] text-muted-foreground flex justify-between">
-                <span>Day {day.day} · Week {day.week}</span>
-                <span className="hidden sm:inline">{dayIdx + 1} / {DAYS.length}</span>
+              <div className="mono text-[9px] sm:text-[10px] text-muted-foreground flex justify-between">
+                <span className="truncate">D{day.day} W{day.week}</span>
+                <span className="hidden sm:inline ml-2 flex-shrink-0">{dayIdx + 1}/{DAYS.length}</span>
               </div>
               <input
                 type="range"
@@ -358,16 +411,16 @@ function Index() {
                 value={dayIdx}
                 onInput={(e) => setDayIdx(parseInt((e.target as HTMLInputElement).value))}
                 onChange={(e) => setDayIdx(parseInt(e.target.value))}
-                className="w-full accent-primary mt-1"
+                className="w-full accent-primary mt-1 h-1.5"
               />
             </div>
 
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden sm:flex items-center gap-0.5 md:gap-1 flex-shrink-0">
               {[0.5, 1, 2].map((s) => (
                 <button
                   key={s}
                   onClick={() => setSpeed(s)}
-                  className={`rounded-md px-2 py-1 mono text-[10px] transition
+                  className={`speed-btn rounded-md px-1.5 sm:px-2 py-1 mono text-[9px] sm:text-[10px] transition
                     ${speed === s ? "bg-primary text-primary-foreground" : "bg-white/5 hover:bg-white/10 text-foreground/70"}`}
                 >{s}×</button>
               ))}
@@ -375,18 +428,18 @@ function Index() {
           </div>
 
           {/* Day chips row - horizontal scroll */}
-          <div className="mt-2.5 flex gap-1 overflow-x-auto no-scrollbar pb-0.5">
+          <div className="mt-2 sm:mt-2.5 flex gap-0.5 sm:gap-1 overflow-x-auto no-scrollbar pb-0.5">
             {DAYS.map((d, i) => (
               <button
                 key={d.day}
                 onClick={() => setDayIdx(i)}
-                className={`shrink-0 rounded-lg px-2 py-1.5 min-w-[54px] text-left transition
+                className={`day-chip shrink-0 rounded-lg px-1.5 sm:px-2 py-1 sm:py-1.5 min-w-[48px] sm:min-w-[54px] text-left transition
                   ${i === dayIdx
                     ? "bg-primary text-primary-foreground shadow-[0_0_16px_rgb(255_100_170/0.4)]"
                     : "bg-white/5 hover:bg-white/10 text-foreground/70"}`}
               >
-                <div className="mono text-[9px] opacity-80">D{d.day}</div>
-                <div className="text-[10px] font-semibold leading-tight truncate max-w-[80px]">{d.title}</div>
+                <div className="mono text-[8px] sm:text-[9px] opacity-80">D{d.day}</div>
+                <div className="text-[9px] sm:text-[10px] font-semibold leading-tight truncate">{d.title}</div>
               </button>
             ))}
           </div>
