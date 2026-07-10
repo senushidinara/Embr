@@ -90,4 +90,59 @@
   30% { transform: scale(1.25); opacity: 1; }
   60% { transform: scale(1.08); opacity: 0.95; }
 }
+
+@keyframes labelFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-2px); }
+}
+
 .heart-dot { animation: pulseHeart 0.375s ease-in-out infinite; }
+
+.label-button {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  animation: labelFloat 3s ease-in-out infinite;
+
+  &:hover:not(:active) {
+    animation: labelFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 8px rgba(255, 61, 138, 0.3));
+  }
+
+  &:active {
+    animation: none;
+  }
+}
+
+.label-dot {
+  animation: pulseHeart 0.5s ease-in-out infinite;
+}
+
+.label-container {
+  will-change: contents;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+  backface-visibility: hidden;
+  image-rendering: crisp-edges;
+  -webkit-font-smoothing: antialiased;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+}
+
+@supports (gpu: true) {
+  .label-button {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label-button, .label-dot, .heart-dot, .playback-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}

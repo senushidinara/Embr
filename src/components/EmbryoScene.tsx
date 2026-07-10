@@ -63,30 +63,55 @@ export function EmbryoScene({
     const mount = mountRef.current;
     if (!mount) return;
 
-    let renderer: THREE.WebGLRenderer;
-    try {
-      renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        alpha: true,
-        powerPreference: "high-performance",
-        precision: "highp",
-        stencil: false,
-        depth: true,
-        failIfMajorPerformanceCaveat: false,
-      });
-    } catch (e) {
-      console.warn("WebGL initialization failed, retrying with fallback settings", e);
-      renderer = new THREE.WebGLRenderer({
-        antialias: false,
-        alpha: true,
-        powerPreference: "low-power",
-        precision: "mediump",
-        stencil: false,
-        depth: true,
-      });
+    // Ensure mount element is ready and visible
+    if (mount.clientWidth === 0 || mount.clientHeight === 0) {
+      const timeout = setTimeout(() => {
+        // Retry initialization after a short delay
+      }, 100);
+      return () => clearTimeout(timeout);
     }
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
+    let renderer: THREE.WebGLRenderer | null = null;
+    const rendererParams: THREE.WebGLRendererParameters = {
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance",
+      precision: "highp",
+      stencil: false,
+      depth: true,
+      failIfMajorPerformanceCaveat: false,
+    };
+
+    try {
+      renderer = new THREE.WebGLRenderer(rendererParams);
+      const ctx = renderer.getContext();
+      if (!ctx) {
+        throw new Error("WebGL context creation failed");
+      }
+    } catch (e) {
+      console.warn("WebGL initialization failed, attempting fallback", e);
+      try {
+        renderer = new THREE.WebGLRenderer({
+          antialias: false,
+          alpha: true,
+          powerPreference: "low-power",
+          precision: "mediump",
+          stencil: false,
+          depth: true,
+        });
+        const ctx = renderer.getContext();
+        if (!ctx) {
+          throw new Error("Fallback context creation failed");
+        }
+      } catch (fallbackError) {
+        console.error("WebGL unavailable on this system", fallbackError);
+        return;
+      }
+    }
+
+    if (!renderer) return;
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.localClippingEnabled = true;
     renderer.setClearColor(0x000000, 0);
@@ -95,32 +120,49 @@ export function EmbryoScene({
     renderer.toneMappingExposure = 1.1;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    mount.appendChild(renderer.domElement);
+
+    try {
+      mount.appendChild(renderer.domElement);
+    } catch (e) {
+      console.error("Failed to append renderer to mount", e);
+      renderer.dispose();
+      return;
+    }
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
-      45,
+      50,
       mount.clientWidth / mount.clientHeight,
-      0.1,
-      100,
+      0.05,
+      200,
     );
     camera.position.set(0, 0, 8);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-    const hemi = new THREE.HemisphereLight(0xfff3fb, 0x24111b, 0.45);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambientLight);
+
+    const hemi = new THREE.HemisphereLight(0xfff3fb, 0x24111b, 0.5);
+    hemi.position.set(0, 50, 0);
     scene.add(hemi);
-    const key = new THREE.DirectionalLight(0xffe4f0, 1.4);
+
+    const key = new THREE.DirectionalLight(0xffe4f0, 1.6);
     key.position.set(4, 5, 6);
     key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
-    key.shadow.radius = 2;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.left = -10;
+    key.shadow.camera.right = 10;
+    key.shadow.camera.top = 10;
+    key.shadow.camera.bottom = -10;
+    key.shadow.radius = 3;
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0x88ccff, 0.9);
+
+    const rim = new THREE.DirectionalLight(0x88ccff, 0.95);
     rim.position.set(-5, -3, -4);
     rim.castShadow = true;
     rim.shadow.mapSize.set(1024, 1024);
     scene.add(rim);
-    const fill = new THREE.PointLight(0xff88bb, 0.7, 20);
+
+    const fill = new THREE.PointLight(0xff88bb, 0.8, 25);
     fill.position.set(-3, 2, 3);
     scene.add(fill);
 
@@ -136,9 +178,12 @@ export function EmbryoScene({
         opacity: 0.18,
         side: THREE.DoubleSide,
         depthWrite: false,
+        depthTest: true,
+        fog: false,
       }),
     );
     slicePlaneMesh.visible = false;
+    slicePlaneMesh.renderOrder = 1;
     scene.add(slicePlaneMesh);
 
     const st: NonNullable<typeof stateRef.current> = {
@@ -222,6 +267,8 @@ export function EmbryoScene({
     let raf = 0;
     const clock = new THREE.Clock();
     const tmpV = new THREE.Vector3();
+    const tmpV2 = new THREE.Vector3();
+
     const tuneMeshQuality = (root: THREE.Object3D) => {
       root.traverse((o) => {
         const mesh = o as THREE.Mesh;
@@ -232,7 +279,7 @@ export function EmbryoScene({
         if (!m) return;
         const arr = Array.isArray(m) ? m : [m];
         for (const mm of arr) {
-          mm.dithering = true;
+          if (mm) mm.dithering = true;
         }
       });
     };
@@ -260,11 +307,23 @@ export function EmbryoScene({
       const t = clock.getElapsedTime();
       const rotationSmoothing = 0.15;
       const zoomSmoothing = 0.12;
-      st.rotX += (st.targetRotX - st.rotX) * rotationSmoothing;
-      st.rotY += (st.targetRotY - st.rotY) * rotationSmoothing;
-      stageGroup.rotation.x = st.rotX;
-      stageGroup.rotation.y = st.rotY;
-      camera.position.z += (st.zoom - camera.position.z) * zoomSmoothing;
+
+      // Smooth rotation
+      if (Math.abs(st.targetRotX - st.rotX) > 0.0001 || Math.abs(st.targetRotY - st.rotY) > 0.0001) {
+        st.rotX += (st.targetRotX - st.rotX) * rotationSmoothing;
+        st.rotY += (st.targetRotY - st.rotY) * rotationSmoothing;
+        stageGroup.rotation.order = "YXZ";
+        stageGroup.rotation.x = st.rotX;
+        stageGroup.rotation.y = st.rotY;
+      }
+
+      // Smooth zoom with vector math
+      if (Math.abs(st.zoom - camera.position.z) > 0.01) {
+        tmpV2.set(0, 0, st.zoom);
+        tmpV2.applyAxisAngle(new THREE.Vector3(1, 0, 0), st.rotX);
+        tmpV2.applyAxisAngle(new THREE.Vector3(0, 1, 0), st.rotY);
+        camera.position.lerp(tmpV2, zoomSmoothing);
+      }
 
       // Crossfade
       if (st.prevGroup) {
@@ -343,7 +402,11 @@ export function EmbryoScene({
         });
       }
 
-      renderer.render(scene, camera);
+      try {
+        renderer.render(scene, camera);
+      } catch (e) {
+        console.error("Render error:", e);
+      }
 
       const w = mount.clientWidth,
         h = mount.clientHeight;
@@ -361,7 +424,12 @@ export function EmbryoScene({
           screen: { x, y, visible },
         });
       }
-      st.onLabels(out);
+
+      try {
+        st.onLabels(out);
+      } catch (e) {
+        console.warn("Label callback error:", e);
+      }
 
       raf = requestAnimationFrame(tick);
     };

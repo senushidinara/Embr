@@ -20,10 +20,11 @@ function Index() {
   const [labels, setLabels] = useState<ProjectedLabel[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
+  const [webglError, setWebglError] = useState(false);
 
   // Video playback
   const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(1); // 0.5, 1, 2
+  const [speed, setSpeed] = useState(1);
   const [panelOpen, setPanelOpen] = useState(true);
 
   const day = DAYS[dayIdx];
@@ -61,10 +62,23 @@ function Index() {
   // Keyboard controls: ← → to step, space to play/pause
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === "ArrowRight") { setDayIdx((i) => Math.min(DAYS.length - 1, i + 1)); }
-      else if (e.key === "ArrowLeft") { setDayIdx((i) => Math.max(0, i - 1)); }
-      else if (e.key === " ") { e.preventDefault(); setPlaying((p) => !p); }
+      const target = e.target as HTMLElement;
+      if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) return;
+
+      switch (e.key) {
+        case "ArrowRight":
+          e.preventDefault();
+          setDayIdx((i) => Math.min(DAYS.length - 1, i + 1));
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          setDayIdx((i) => Math.max(0, i - 1));
+          break;
+        case " ":
+          e.preventDefault();
+          setPlaying((p) => !p);
+          break;
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -74,12 +88,11 @@ function Index() {
     const positioned = [...labels];
     const labelSize = { w: 140, h: 28 };
     const padding = 12;
-    const minDist = 70;
+    const minDist = 85;
 
     for (let i = 0; i < positioned.length; i++) {
-      let adjusted = false;
       let attempts = 0;
-      const maxAttempts = 8;
+      const maxAttempts = 12;
 
       while (attempts < maxAttempts) {
         let x = positioned[i].screen.x;
@@ -110,7 +123,6 @@ function Index() {
         if (!collided) {
           positioned[i].screen.x = x;
           positioned[i].screen.y = y;
-          adjusted = true;
           break;
         }
         attempts++;
@@ -120,7 +132,10 @@ function Index() {
     return positioned;
   };
 
-  const adjustedLabels = useMemo(() => positionLabels(labels), [labels]);
+  const adjustedLabels = useMemo(() => {
+    // Memoize only when labels actually change to improve performance
+    return positionLabels(labels);
+  }, [labels]);
 
   return (
     <main className="relative h-screen w-screen overflow-hidden">
@@ -135,20 +150,21 @@ function Index() {
       />
 
       {/* Label overlays */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="label-container pointer-events-none absolute inset-0">
         {adjustedLabels.map((lb) =>
           lb.screen.visible ? (
             <button
               key={lb.key}
               onClick={() => setSelected(lb.key === selected ? null : lb.key)}
-              className={`label-button pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2.5 py-1 text-[11px] font-medium mono transition
+              className={`label-button pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 rounded-full border px-2.5 py-1 text-[11px] font-medium mono transition-all duration-150 will-change-transform
                 ${selected === lb.key
-                  ? "border-primary bg-primary text-primary-foreground shadow-[0_0_20px_rgb(255_100_170/0.5)]"
-                  : "border-white/25 bg-black/45 text-white/90 backdrop-blur-md hover:border-primary/70"}`}
+                  ? "border-primary bg-primary text-primary-foreground shadow-[0_0_20px_rgba(255,100,170,0.6)] scale-105"
+                  : "border-white/25 bg-black/45 text-white/90 backdrop-blur-md hover:border-primary/70 hover:bg-black/55"}`}
               style={{ left: `${lb.screen.x}px`, top: `${lb.screen.y}px` }}
               title={lb.text}
+              type="button"
             >
-              <span className="label-dot mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="label-dot mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current" />
               {lb.text}
             </button>
           ) : null,
@@ -462,11 +478,13 @@ function ToggleRow({ label, active, onClick }: { label: string; active: boolean;
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[12px] transition
-        ${active ? "bg-primary text-primary-foreground" : "bg-white/5 hover:bg-white/10"}`}
+      type="button"
+      className={`w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[12px] transition-all duration-150
+        ${active ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(255,61,138,0.3)]" : "bg-white/5 hover:bg-white/10 text-foreground"}`}
+      aria-pressed={active}
     >
       <span>{label}</span>
-      <span className={`mono text-[10px] ${active ? "opacity-90" : "opacity-60"}`}>{active ? "ON" : "OFF"}</span>
+      <span className={`mono text-[10px] font-semibold ${active ? "opacity-90" : "opacity-60"}`}>{active ? "ON" : "OFF"}</span>
     </button>
   );
 }

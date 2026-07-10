@@ -19,7 +19,14 @@ export interface DaySceneBuild {
 // Helpers
 // ============================================================
 const mat = (opts: THREE.MeshPhysicalMaterialParameters) =>
-  new THREE.MeshPhysicalMaterial({ roughness: 0.35, clearcoat: 0.4, ...opts });
+  new THREE.MeshPhysicalMaterial({
+    roughness: 0.35,
+    clearcoat: 0.4,
+    metalness: 0,
+    side: THREE.FrontSide,
+    envMapIntensity: 1,
+    ...opts,
+  });
 
 const basicMat = (opts: THREE.MeshBasicMaterialParameters) =>
   new THREE.MeshBasicMaterial(opts);
